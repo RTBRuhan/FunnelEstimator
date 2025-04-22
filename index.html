@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Funnel Estimator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header-section">
+            <h1>Funnel Estimator</h1>
+            <div class="header-attribution">
+                 <a href="https://rtbruhan.github.io" target="_blank" rel="noopener noreferrer">Author : RTBRuhan</a>
+            </div>
+        </div>
+
+        <div class="main-content-area">
+            <!-- Left Panel: Inputs and Expenses -->
+            <div class="left-panel">
+                <div class="input-grid">
+                    <div class="input-group" title="What is the total amount you want to earn? (If MRR/ARR is selected, this is your monthly/annual target).">
+                        <label for="targetAmount">Target ($):</label>
+                        <div class="target-type-selector">
+                            <input type="radio" id="targetTypeAmount" name="targetType" value="Amount" checked>
+                            <label for="targetTypeAmount">Total Amount</label>
+                            <input type="radio" id="targetTypeMRR" name="targetType" value="MRR">
+                            <label for="targetTypeMRR">MRR</label>
+                            <input type="radio" id="targetTypeARR" name="targetType" value="ARR">
+                            <label for="targetTypeARR">ARR</label>
+                        </div>
+                        <input type="number" id="targetAmount" value="1000" step="1000">
+                    </div>
+
+                    <div class="input-group" title="What is the price of your product/service?">
+                        <label for="itemPrice">Item Price ($):</label>
+                        <input type="number" id="itemPrice" value="50" step="1">
+                    </div>
+
+                    <div class="input-group" title="Percentage of people who interact (e.g., click, sign up) per 1000 reached. Example: 20 interactions per 1000 views = 2%.">
+                        <label for="initialConversion">Initial Interest Rate (%):</label>
+                        <input type="number" id="initialConversion" value="2" step="0.1" min="0.01" max="100">
+                        <small>(e.g., from Reach to Free User/Prospect)</small>
+                    </div>
+
+                    <div class="input-group" title="What is the percentage of free users that convert to paid users?">
+                        <label for="finalConversion">Customer Conversion Rate (%):</label>
+                        <input type="number" id="finalConversion" value="1" step="0.1" min="0.01" max="100">
+                        <small>(e.g., from Free User/Prospect to Customer)</small>
+                    </div>
+                </div>
+
+                <!-- Churn Toggle -->
+                <div class="churn-toggle-section">
+                     <label class="switch">
+                         <input type="checkbox" id="churnToggle">
+                         <span class="slider round"></span>
+                     </label>
+                     <label for="churnToggle" class="toggle-label">Calculate Monthly Churn?</label>
+                </div>
+
+                 <!-- Churn Input (Initially Hidden) -->
+                <div class="input-group" id="churn-input-group" style="display: none;" title="How many customers (as a percentage) do you lose every month?">
+                    <label for="churnRate">Monthly Churn Rate (%):</label>
+                    <input type="number" id="churnRate" value="5" step="0.1" min="0" max="100">
+                </div>
+
+                <div class="expense-toggle-section">
+                    <label class="switch">
+                        <input type="checkbox" id="expenseToggle">
+                        <span class="slider round"></span>
+                    </label>
+                    <label for="expenseToggle" class="toggle-label">Calculate Expenses?</label>
+                </div>
+
+                <div id="expense-calculator" style="display: none;">
+                    <h2>Expenses:</h2>
+                    <div id="expense-items-list">
+                        <!-- Dynamic expense items will be added here -->
+                    </div>
+                    <button id="add-expense-btn">+ Add Expense Item</button>
+
+                    <div class="expense-adjustment-toggle">
+                         <label class="switch">
+                             <input type="checkbox" id="adjustForExpenseToggle">
+                             <span class="slider round"></span>
+                         </label>
+                         <label for="adjustForExpenseToggle" class="toggle-label">Adjust Plan for Expenses?</label>
+                         <small title="If enabled, the required Reach/Users/Customers will increase to ensure your original Target $ is met *after* deducting expenses.">(Hover for info)</small>
+                    </div>
+
+                    <div class="expense-summary">
+                         <p>Total Expenses: <span id="totalExpense">$0.00</span></p>
+                         <p>Net Amount: <span id="netAmount">$0.00</span></p>
+                    </div>
+                </div>
+
+                <!-- Advanced Toggle -->
+                <div class="advanced-toggle-section">
+                     <label class="switch">
+                         <input type="checkbox" id="advancedToggle">
+                         <span class="slider round"></span>
+                     </label>
+                     <label for="advancedToggle" class="toggle-label">Show Advanced SaaS Metrics?</label>
+                     <span class="beta-tag">Beta</span>
+                </div>
+
+                <!-- Advanced Features Section (Initially Hidden) -->
+                <div id="advanced-features" style="display: none;">
+                    <h2>Advanced Metrics:</h2>
+                    <!-- CAC Input -->
+                    <div class="input-group" title="Estimate of how much it costs, on average, to acquire one new paying customer (including marketing spend, sales costs, etc.).">
+                        <label for="cacInput">Average Customer Acquisition Cost (CAC) ($):</label>
+                        <input type="number" id="cacInput" value="100" step="1" min="0">
+                    </div>
+                    <!-- Advanced Results -->
+                    <div class="advanced-summary">
+                         <p title="Lifetime Value: Estimated total revenue from an average customer before they churn. Calculated as (Item Price / Monthly Churn Rate). Requires Churn to be enabled.">Est. Customer LTV: <span id="ltvDisplay">N/A</span></p>
+                         <p title="LTV to CAC Ratio: Compares customer lifetime value to the cost of acquiring them. A ratio > 3 is often considered healthy.">LTV / CAC Ratio: <span id="ltvCacRatioDisplay">N/A</span></p>
+                         <p title="Payback Period: Months needed for cumulative revenue from a customer to cover their acquisition cost. Calculated as (CAC / Item Price).">CAC Payback Period: <span id="paybackPeriodDisplay">N/A</span></p>
+                         <!-- NEW: Warning Message Placeholder -->
+                         <p id="cacWarning" class="warning-message" style="display: none;" title=""></p>
+                    </div>
+                </div>
+
+            </div> <!-- End Left Panel -->
+
+            <!-- Right Panel: Results and Flow -->
+            <div class="right-panel">
+                <div id="results">
+                    <h2>Your Path (Calculations):</h2>
+                    <p id="salesNeeded"></p>
+                    <p id="prospectsNeeded"></p>
+                    <p id="reachNeeded"></p>
+                    <p id="potentialMRR" style="display: block;"></p>
+                    <p id="potentialARR" style="display: block;"></p>
+                </div>
+
+                <div id="flow-diagram">
+                     <h2>Your Path (Flow):</h2>
+                     <div class="flow-step" title="Total people to reach (e.g., ad views, site visitors) to start the process.">
+                         <span class="flow-number">1</span>
+                         <span class="flow-label">Reach / Leads</span>
+                         <span class="flow-value" id="flowReach">...</span>
+                     </div>
+                     <div class="flow-step" title="Number of interested people (e.g., sign-ups, installs) needed from the initial reach.">
+                          <span class="flow-number">2</span>
+                         <span class="flow-label">Free Users</span>
+                         <span class="flow-value" id="flowProspects">...</span>
+                         <small class="flow-rate">(<span id="flowInitialRate"></span>%)</small>
+                     </div>
+                     <div class="flow-step" title="Number of paying customers needed from the interested 'Free Users'.">
+                         <span class="flow-number">3</span>
+                        <span class="flow-label">Customers</span>
+                        <span class="flow-value" id="flowCustomers">...</span>
+                        <small class="flow-rate">(<span id="flowFinalRate"></span>%)</small>
+                    </div>
+                     <div class="flow-step" title="The final revenue goal (Total, MRR, or ARR) this plan aims for, potentially adjusted for expenses/churn.">
+                         <span class="flow-number">4</span>
+                        <span class="flow-label">Target Met</span>
+                        <span class="flow-value" id="flowTarget">...</span>
+                     </div>
+                     <!-- Net Result Node (Conditional) -->
+                     <div id="net-result-node" style="display: none;">
+                          <div class="flow-step" title="The final calculated amount after subtracting all expenses from the achieved revenue.">
+                              <span class="flow-number">5</span>
+                             <span class="flow-label">Net Result</span>
+                             <span class="flow-value" id="flowNetValue">...</span>
+                          </div>
+                     </div>
+                </div>
+             </div> <!-- End Right Panel -->
+
+        </div> <!-- End Main Content Area -->
+
+    </div> <!-- End Container -->
+
+    <!-- Help Button -->
+    <button id="helpButton" class="help-button" title="Help / Manual">?</button>
+
+    <!-- Help Modal -->
+    <div id="helpModal" class="modal">
+        <div class="modal-content">
+            <button class="close-help-button" title="Close">&times;</button>
+            <h2>How to Use This Calculator</h2>
+            <p>This tool helps you estimate the effort needed to reach a financial goal based on your product price and conversion rates. Fill in the inputs on the left, and see the required path on the right.</p>
+
+            <h3>Left Panel: Inputs</h3>
+            <ul>
+                <li><strong>Target ($):</strong> Your main financial goal. 
+                    <ul>
+                        <li>Select 'Total Amount' if it's a one-time target (e.g., total revenue for a project).</li>
+                        <li>Select 'MRR' if it's a Monthly Recurring Revenue target (e.g., for subscriptions).</li>
+                        <li>Select 'ARR' if it's an Annual Recurring Revenue target.</li>
+                        <li>Enter the corresponding value in the input box below.</li>
+                    </ul>
+                </li>
+                <li><strong>Item Price ($):</strong> The price of one unit of your product/service. For MRR/ARR, this is typically the monthly/recurring price per customer.</li>
+                <li><strong>Initial Interest Rate (%):</strong> Out of the people you 'Reach', what percentage show initial interest (e.g., click an ad, sign up for free, install an app)? Example: 20 clicks per 1000 views = 2%.</li>
+                <li><strong>Customer Conversion Rate (%):</strong> Out of the people who showed initial interest ('Free Users'), what percentage become paying customers? Example: 5 paid customers from 100 free signups = 5%.</li>
+                <li><strong>Calculate Monthly Churn?:</strong> (Toggle) Turn ON if you have a subscription/recurring model. This lets you enter the percentage of paying customers who leave each month. This makes MRR/ARR targets harder to hit, requiring more new customers.</li>
+                <li><strong>Calculate Expenses?:</strong> (Toggle) Turn ON to factor in costs. 
+                    <ul>
+                        <li>Add expense items (e.g., 'Marketing', 'Salaries') and their estimated monthly cost.</li>
+                        <li><strong>Adjust Plan for Expenses?:</strong> (Toggle within Expenses) If ON, the calculated 'Path' (Reach/Users/Customers needed) will increase to ensure your original Target is met *after* paying expenses. If OFF, the 'Path' shows what's needed for the Target, and the 'Net Result' shows what's left after expenses.</li>
+                    </ul>
+                </li>
+                 <li><strong>Show Advanced SaaS Metrics?:</strong> (Toggle) Turn ON for common subscription business metrics.
+                    <ul>
+                         <li><strong>Average Customer Acquisition Cost (CAC) ($):</strong> INPUT required. How much do you estimate it costs (marketing, sales etc.) to get one new paying customer?</li>
+                         <li><strong>Est. Customer LTV:</strong> CALCULATED. Lifetime Value - estimate of total revenue from one customer before they churn (Requires Churn to be ON).</li>
+                         <li><strong>LTV / CAC Ratio:</strong> CALCULATED. Compares LTV to CAC. A ratio over 3 is generally considered good.</li>
+                         <li><strong>CAC Payback Period:</strong> CALCULATED. How many months of revenue from a customer it takes to cover their acquisition cost.</li>
+                    </ul>
+                 </li>
+            </ul>
+
+            <h3>Right Panel: Results</h3>
+            <ul>
+                <li><strong>Your Path (Calculations):</strong> Shows a 3-step summary of the goal, the required strategy (reach & free users needed per month/total), and the outcome (customers needed per month/total). It also shows Target/Equivalent MRR/ARR for context (these lines are hidden if 'Total Amount' target is selected).</li>
+                <li><strong>Your Path (Flow):</strong> A visual diagram showing the numbers needed at each stage (Reach -> Free Users -> Customers -> Target Met). If expenses are calculated, an extra 'Net Result' step appears showing the final amount after costs.</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 

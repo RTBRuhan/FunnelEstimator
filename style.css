@@ -1,0 +1,676 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    background-color: #eef1f5; /* Lighter business blue/gray */
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Align top */
+    min-height: 100vh;
+}
+
+.container {
+    background: #fff;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    max-width: 1200px; /* Increased max-width for two columns */
+    width: 100%;
+    margin-top: 30px;
+}
+
+h1 {
+    text-align: center;
+    color: #1a2b4d;
+    font-weight: 600;
+    margin-bottom: 0; /* Reset margin, header section handles spacing */
+}
+
+/* Header Section Layout */
+.header-section {
+    margin-bottom: 40px; /* Space below header */
+    position: relative; /* Needed for absolute positioning of attribution */
+    padding-top: 10px; /* Add padding to prevent overlap if title wraps */
+    padding-bottom: 10px;
+}
+
+.header-attribution {
+    position: absolute;
+    right: 0;
+    top: 50%; /* Vertically center relative to header section */
+    transform: translateY(-50%);
+    font-size: 0.9em;
+    color: #777;
+    text-align: right;
+}
+
+.header-attribution a {
+    color: #555;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.header-attribution a:hover {
+    text-decoration: underline;
+    color: #333;
+}
+
+/* Main Layout */
+.main-content-area {
+    display: flex;
+    gap: 40px; /* Gap between left and right panels */
+}
+
+.left-panel {
+    flex: 1; /* Take up available space */
+    min-width: 400px; /* Minimum width */
+}
+
+.right-panel {
+    flex: 1; /* Take up available space */
+    min-width: 400px; /* Minimum width */
+    background-color: #f8f9fa; /* Optional: Slight background difference */
+    padding: 30px;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+/* Adjustments for elements within panels */
+.input-grid {
+     grid-template-columns: 1fr; /* Change grid to single column in left panel */
+     gap: 30px; /* Increased gap */
+     margin-bottom: 30px;
+}
+
+#results,
+#flow-diagram {
+    margin-top: 0; /* Remove top margin as panel provides separation */
+    padding-top: 0;
+    border-top: none; /* Remove border as panel provides separation */
+}
+
+/* Flow Diagram Styles - Material UI Inspired (Reverted) + Grid Layout */
+#flow-diagram {
+    display: grid; /* Use Grid */
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); /* Responsive columns */
+    gap: 30px 40px; /* Row and column gap */
+    margin-top: 30px;
+    padding: 35px 10px 25px 10px;
+    border-top: 1px solid #e0e0e0;
+    position: relative;
+    align-items: stretch; /* Stretch items to fill grid cell height if needed */
+}
+
+#flow-diagram h2 {
+    grid-column: 1 / -1; /* Make heading span all columns */
+    text-align: center;
+    margin-bottom: 40px;
+    color: #555;
+    font-weight: 500;
+    font-size: 1.3em;
+}
+
+/* Reverted Material UI Step Styling */
+.flow-step {
+    background-color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    padding: 20px 25px;
+    text-align: center;
+    min-width: 130px;
+    /* width: auto; */ /* Let grid handle width */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.1);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    transition: box-shadow 0.3s ease;
+    cursor: help;
+}
+
+.flow-step:hover {
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.15);
+}
+
+.flow-label {
+    display: block;
+    font-size: 0.85em;
+    color: #616161;
+    margin-bottom: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.flow-value {
+    display: block;
+    font-size: 1.4em;
+    font-weight: 500;
+    color: #212121;
+    line-height: 1.2;
+    margin-bottom: 3px;
+}
+
+.flow-rate {
+    font-size: 0.8em;
+    color: #757575;
+    display: block;
+    margin-top: 8px;
+}
+
+/* Numbered Circles (Keep styling) */
+.flow-number {
+    position: absolute;
+    top: -15px;
+    right: -10px;
+    background-color: #4CAF50;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8em;
+    font-weight: bold;
+    line-height: 1;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+/* Arrow Styling - Simplified for Grid */
+.flow-arrow {
+    /* Hide the complex line/arrowhead */
+    background-color: transparent;
+    height: auto;
+    border: none;
+    /* Use simple text arrow again, let grid gap provide space */
+    font-size: 1.8em;
+    color: #bdbdbd;
+    padding: 0 10px;
+    text-align: center;
+    align-self: center;
+    /* Remove pseudo-elements if they exist */
+    /* content: none !important; */ 
+}
+.flow-arrow::after {
+    content: none;
+}
+
+/* Specific styles for the Net Result Node container */
+#net-result-node {
+    display: flex; 
+    align-items: center;
+    /* Grid placement might need JS if dynamic based on count */
+    /* For now, assumes it appears last */
+    grid-column: span 2; /* Example: Make it span if needed */
+    justify-self: center; /* Center it if it spans */
+}
+
+/* Error Styling */
+.results-error #results p:first-child {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-color: #f5c6cb;
+}
+.results-error #results p:not(:first-child) {
+    display: none; /* Hide other paragraphs on error */
+}
+
+.results-error #flow-diagram {
+    opacity: 0.5; /* Dim flow diagram on error */
+    pointer-events: none;
+}
+
+/* Potential MRR/ARR specific styling (optional) */
+#potentialMRR, #potentialARR {
+    font-style: italic;
+    color: #555;
+    background-color: #f0f0f0;
+    border-color: #e0e0e0;
+}
+
+/* Expense Toggle Switch Styles */
+.expense-toggle-section {
+    display: flex;
+    align-items: center;
+    margin-top: 25px; /* Increased margin */
+    padding: 15px 0;
+    border-top: 1px solid #e0e0e0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.toggle-label {
+    margin-left: 10px;
+    color: #334e68;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px; /* Slightly smaller width */
+  height: 24px; /* Slightly smaller height */
+}
+
+.switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px; /* Smaller handle */
+  width: 18px;  /* Smaller handle */
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #4a90e2; /* Business blue */
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #4a90e2;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+.slider.round {
+  border-radius: 24px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+/* Expense Calculator Section */
+#expense-calculator {
+    margin-top: 30px; /* Increased margin */
+    padding: 25px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+#expense-calculator h2 {
+     color: #1a2b4d;
+    margin-bottom: 20px;
+    font-weight: 600;
+    font-size: 1.2em; /* Slightly smaller heading */
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 10px;
+}
+
+#expense-items-list {
+    margin-bottom: 20px;
+}
+
+.expense-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: #fff;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+.expense-item input[type="text"],
+.expense-item input[type="number"] {
+    padding: 8px 10px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 0.95em;
+}
+
+.expense-item input[type="text"] {
+    flex-grow: 1; /* Allow name to take available space */
+}
+
+.expense-item input[type="number"] {
+    width: 100px; /* Fixed width for cost */
+    text-align: right;
+}
+
+.expense-item .remove-expense-btn {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    padding: 5px 8px;
+    cursor: pointer;
+    font-size: 0.9em;
+    line-height: 1;
+}
+
+.expense-item .remove-expense-btn:hover {
+    background-color: #f5c6cb;
+}
+
+#add-expense-btn {
+    background-color: #e2e6ea;
+    color: #343a40;
+    border: 1px solid #adb5bd;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+    display: block; /* Make it block */
+    margin-bottom: 20px; /* Add space below */
+}
+
+#add-expense-btn:hover {
+    background-color: #ced4da;
+}
+
+/* Expense Adjustment Toggle Styles */
+.expense-adjustment-toggle {
+    display: flex;
+    align-items: center;
+    margin-top: 15px;
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: #e9ecef; /* Slightly different background */
+    border-radius: 4px;
+}
+
+.expense-adjustment-toggle .toggle-label {
+    margin-left: 10px;
+    flex-grow: 1; /* Allow label to push small text to the right */
+}
+
+.expense-adjustment-toggle small {
+    font-size: 0.85em;
+    color: #6c757d;
+    cursor: help;
+}
+/* End Expense Adjustment Toggle */
+
+.expense-summary {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px dashed #ced4da;
+}
+
+.expense-summary p {
+    margin-bottom: 8px;
+    font-size: 1em;
+    color: #334e68;
+    font-weight: 500;
+}
+
+.expense-summary span {
+    font-weight: 600;
+    color: #1a2b4d;
+}
+
+/* Churn Toggle and Input Styles */
+.churn-toggle-section {
+    display: flex;
+    align-items: center;
+    margin-top: 25px; /* Increased margin */
+    padding-bottom: 20px;
+}
+
+#churn-input-group {
+    margin-top: -10px;
+    margin-bottom: 25px; /* Increased margin */
+    padding-left: 60px;
+}
+
+.input-group input[type="number"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    box-sizing: border-box;
+    font-size: 1em;
+    transition: border-color 0.2s ease-in-out;
+}
+
+.input-group input[type="number"]:focus {
+    border-color: #4a90e2; /* Highlight focus */
+    outline: none;
+}
+
+.input-group small {
+    display: block;
+    margin-top: 6px;
+    color: #6c757d; /* Gray */
+    font-size: 0.85em;
+}
+
+/* Add transition for smoother appearance? */
+}
+
+.input-group input[type="number"] {
+    width: 100%;
+    padding: 12px;
+}
+
+/* Footer Styles */
+/* footer {
+    text-align: center;
+    padding: 20px;
+    margin-top: 30px;
+    font-size: 0.9em;
+    color: #777;
+} */
+
+/* footer a {
+    color: #555;
+    text-decoration: none;
+    font-weight: 500;
+} */
+
+/* footer a:hover {
+    text-decoration: underline;
+    color: #333;
+} */
+
+/* Advanced Toggle Section */
+.advanced-toggle-section {
+    display: flex;
+    align-items: center;
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+    gap: 10px; /* Add gap for spacing */
+}
+
+/* Beta Tag Style */
+.beta-tag {
+    font-size: 0.7em;
+    font-weight: bold;
+    color: #fff;
+    background-color: #007bff; /* Blue */
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    vertical-align: middle; /* Align with text */
+    margin-left: 5px; /* Space from label */
+}
+
+/* Advanced Features Section */
+#advanced-features {
+    margin-top: 20px;
+    padding: 25px;
+    background-color: #f0f4f8; /* Slightly different background */
+    border-radius: 8px;
+    border: 1px solid #d6dfe8;
+}
+
+#advanced-features h2 {
+    color: #1a2b4d;
+    margin-bottom: 20px;
+    font-weight: 600;
+    font-size: 1.2em;
+    border-bottom: 1px solid #c0cde0;
+    padding-bottom: 10px;
+}
+
+#advanced-features .input-group {
+    margin-bottom: 25px; /* Spacing for CAC input */
+}
+
+.advanced-summary {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px dashed #c0cde0;
+}
+
+.advanced-summary p {
+    margin-bottom: 12px;
+    font-size: 0.95em;
+    color: #334e68;
+    cursor: help; /* Indicate tooltip */
+}
+
+.advanced-summary span {
+    font-weight: 600;
+    color: #1a2b4d;
+    background-color: #e4eaf1;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 5px;
+}
+
+/* Warning Message Style */
+.warning-message {
+    color: #d9534f; /* Bootstrap's danger color */
+    font-weight: bold;
+    margin-top: 10px;
+    padding: 8px;
+    background-color: #f2dede;
+    border: 1px solid #ebccd1;
+    border-radius: 4px;
+    font-size: 0.9em;
+    cursor: help; /* Indicate tooltip */
+}
+
+/* Help Button Styles */
+.help-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: #007bff; /* Or another noticeable color */
+    color: white;
+    font-size: 1.8em;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 1000;
+    display: flex; /* Center the ? */
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.help-button:hover {
+    background-color: #0056b3;
+}
+
+/* Help Modal Styles */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1001; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.6); /* Black w/ opacity */
+    padding-top: 50px; /* Location of the box */
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: auto;
+    padding: 30px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 700px; /* Max width */
+    border-radius: 8px;
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
+    position: relative;
+    max-height: 85vh; /* Limit height */
+    overflow-y: auto; /* Enable vertical scrolling */
+}
+
+.close-help-button {
+    color: #aaa;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    font-size: 28px;
+    font-weight: bold;
+    background: none;
+    border: none;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.close-help-button:hover,
+.close-help-button:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* Manual Content Styling */
+.modal-content h2 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.modal-content h3 {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    color: #1a2b4d;
+}
+
+.modal-content ul {
+    padding-left: 20px;
+}
+
+.modal-content li {
+    margin-bottom: 10px;
+    line-height: 1.5;
+}
+
+.modal-content li ul {
+    margin-top: 5px;
+    padding-left: 15px;
+}
+
+.modal-content strong {
+     color: #0056b3;
+} 
