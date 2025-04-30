@@ -673,4 +673,177 @@ input:checked + .slider:before {
 
 .modal-content strong {
      color: #0056b3;
+}
+
+/* Responsive Styles */
+@media (max-width: 992px) { /* Adjustments for medium screens / tablets */
+    .container {
+        padding: 30px; /* Slightly reduce padding */
+    }
+    .main-content-area {
+        gap: 30px; /* Reduce gap */
+    }
+    .left-panel, .right-panel {
+        min-width: 300px; /* Reduce min-width */
+    }
+    #flow-diagram {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* Adjust minmax */
+        gap: 25px 30px; /* Adjust gap */
+    }
+}
+
+@media (max-width: 768px) { /* Adjustments for smaller screens / mobile */
+    body {
+        padding: 10px; /* Reduce body padding */
+        align-items: flex-start; /* Align container to top */
+    }
+    .container {
+        padding: 20px; /* Further reduce padding */
+        margin-top: 15px; /* Reduce top margin */
+    }
+    h1 {
+        font-size: 1.8em; /* Reduce heading size */
+    }
+    .header-section {
+        margin-bottom: 25px; /* Reduce bottom margin */
+        padding-top: 5px;
+        padding-bottom: 5px;
+    }
+    .header-attribution {
+        position: static; /* Unset absolute positioning */
+        transform: none;
+        text-align: center; /* Center attribution text */
+        margin-top: 10px; /* Add some space */
+        font-size: 0.8em;
+    }
+    .main-content-area {
+        flex-direction: column; /* Stack panels vertically */
+        gap: 30px; /* Adjust gap for vertical layout */
+        align-items: center; /* Center the stacked panels horizontally */
+    }
+    .left-panel, .right-panel {
+        min-width: 0; /* Remove min-width constraint */
+        width: 90%; /* Use most of the width */
+        max-width: 500px; /* But limit max width for centering */
+        padding: 20px; /* Adjust panel padding */
+    }
+    .input-grid {
+        gap: 20px; /* Reduce gap in input grid */
+    }
+    #flow-diagram {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Smaller minmax */
+        gap: 20px 20px; /* Reduce gaps */
+        padding: 25px 5px 15px 5px; /* Adjust padding */
+        margin-top: 20px;
+    }
+    #flow-diagram h2 {
+        font-size: 1.1em; /* Reduce flow diagram heading */
+        margin-bottom: 25px;
+    }
+    .flow-step {
+        padding: 15px 10px; /* Adjust padding */
+        min-width: 100px; /* Adjust min width */
+    }
+    .flow-value {
+        font-size: 1.2em; /* Adjust font size */
+    }
+    .flow-arrow { /* Hide arrows on small screens if they cause layout issues */
+       display: none;
+    }
+    #net-result-node {
+        grid-column: 1 / -1; /* Make net result span full width */
+        justify-self: center;
+        margin-top: 10px; /* Add some space if stacked */
+    }
+
+    .expense-toggle-section, .churn-toggle-section, .advanced-toggle-section {
+        flex-direction: column; /* Stack toggle elements */
+        align-items: center; /* Align toggle items to center */
+        padding: 10px 0;
+    }
+    /* Add margin below switch when stacked */
+    .expense-toggle-section .switch,
+    .churn-toggle-section .switch,
+    .advanced-toggle-section .switch {
+        margin-bottom: 8px;
+    }
+     #churn-input-group {
+        margin-top: 10px; /* Add space after toggle */
+        padding-left: 0; /* Align with toggles */
+    }
+    .expense-item {
+        flex-direction: column; /* Stack expense item inputs */
+        align-items: stretch; /* Stretch inputs */
+        gap: 10px;
+    }
+    .expense-item input[type="text"] {
+        flex-grow: 1; /* Allow text input to grow */
+    }
+    .expense-item input[type="number"] {
+        width: 100px; /* Give number input a fixed width */
+        align-self: flex-start; /* Align left */
+    }
+    .modal-content {
+        width: 95%; /* Make modal wider on mobile */
+        padding: 15px;
+    }
+    .close-help-button {
+        top: 5px;
+        right: 10px;
+    }
+    .help-button {
+        right: 10px; /* Adjust position */
+        bottom: 10px;
+    }
+}
+
+@media (max-width: 480px) { /* Further adjustments for very small screens */
+     h1 {
+        font-size: 1.6em; /* Further reduce heading */
+     }
+    .container {
+        padding: 15px; /* Further reduce padding */
+    }
+    .left-panel, .right-panel {
+        padding: 20px; /* Increase panel padding for smallest screens */
+        width: 100%; /* On very small screens, use full width again */
+        max-width: none; /* Remove the max-width limit */
+    }
+    .input-group input[type="number"] {
+        /* Ensure number inputs don't overflow */
+         max-width: 100%;
+         width: 100%; /* Make sure it still tries to fill */
+         box-sizing: border-box; /* Include padding in width calculation */
+    }
+    .flow-step {
+        padding: 10px 8px; /* Smaller padding */
+        min-width: 90px;
+    }
+    #flow-diagram {
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Smaller minmax */
+        gap: 15px; /* Reduce gaps */
+    }
+    .expense-item {
+        /* Already stacked, ensure button is okay */
+        gap: 8px;
+    }
+    .expense-item input[type="number"] {
+        width: 80px; /* Slightly smaller width */
+    }
+     .remove-expense-btn {
+        padding: 6px 10px;
+        font-size: 0.9em;
+        align-self: center; /* Center remove button */
+        margin-top: 5px;
+     }
+     .target-type-selector label {
+        padding: 5px 8px; /* Adjust padding */
+        font-size: 0.85em;
+     }
+     .target-type-selector input[type="radio"] {
+        margin-right: 3px; /* Adjust spacing */
+     }
+    .modal-content {
+        padding: 10px;
+    }
 } 
