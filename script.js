@@ -1,585 +1,508 @@
-const targetAmountInput = document.getElementById('targetAmount');
-const itemPriceInput = document.getElementById('itemPrice');
-const initialConversionInput = document.getElementById('initialConversion');
-const finalConversionInput = document.getElementById('finalConversion');
+(function () {
+    "use strict";
 
-// Target Type Radios
-const targetTypeRadios = document.querySelectorAll('input[name="targetType"]'); // Get all radios
-const targetAmountGroup = document.getElementById('targetAmount').closest('.input-group');
-
-const salesNeededDisplay = document.getElementById('salesNeeded');
-const prospectsNeededDisplay = document.getElementById('prospectsNeeded');
-const reachNeededDisplay = document.getElementById('reachNeeded');
-const potentialMRRDisplay = document.getElementById('potentialMRR');
-const potentialARRDisplay = document.getElementById('potentialARR');
-const resultsDiv = document.getElementById('results');
-const containerDiv = document.querySelector('.container');
-
-// Flow Diagram Elements
-const flowReachDisplay = document.getElementById('flowReach');
-const flowProspectsDisplay = document.getElementById('flowProspects');
-const flowCustomersDisplay = document.getElementById('flowCustomers');
-const flowTargetDisplay = document.getElementById('flowTarget'); // Will update this label based on target type
-const flowInitialRateDisplay = document.getElementById('flowInitialRate');
-const flowFinalRateDisplay = document.getElementById('flowFinalRate');
-const flowDiagramDiv = document.getElementById('flow-diagram');
-
-// Expense Elements
-const expenseToggle = document.getElementById('expenseToggle');
-const expenseCalculatorDiv = document.getElementById('expense-calculator');
-const addExpenseBtn = document.getElementById('add-expense-btn');
-const expenseItemsList = document.getElementById('expense-items-list');
-const totalExpenseDisplay = document.getElementById('totalExpense');
-const netAmountDisplay = document.getElementById('netAmount');
-
-// NEW: Expense Adjustment Toggle Element
-const adjustForExpenseToggle = document.getElementById('adjustForExpenseToggle');
-
-// NEW: Churn Elements
-const churnToggle = document.getElementById('churnToggle');
-const churnInputGroup = document.getElementById('churn-input-group');
-const churnRateInput = document.getElementById('churnRate');
-
-// NEW: Net Result Node elements
-const netResultNode = document.getElementById('net-result-node');
-const flowNetValueDisplay = document.getElementById('flowNetValue'); // Get the span for the value
-
-// Ensure Advanced Feature Element references exist
-const advancedToggle = document.getElementById('advancedToggle');
-const advancedFeaturesDiv = document.getElementById('advanced-features');
-const cacInput = document.getElementById('cacInput');
-const ltvDisplay = document.getElementById('ltvDisplay');
-const ltvCacRatioDisplay = document.getElementById('ltvCacRatioDisplay');
-const paybackPeriodDisplay = document.getElementById('paybackPeriodDisplay');
-const cacWarning = document.getElementById('cacWarning'); // NEW: Reference for warning message
-
-// NEW: Help Modal Elements
-const helpButton = document.getElementById('helpButton');
-const helpModal = document.getElementById('helpModal');
-const closeHelpButton = helpModal ? helpModal.querySelector('.close-help-button') : null;
-
-let totalExpenses = 0;
-
-function formatNumber(num) {
-    if (!isFinite(num) || isNaN(num)) {
-        return "---";
+    var engine = window.CapitalEngine;
+    if (!engine) {
+        throw new Error("CapitalEngine failed to load.");
     }
-    if (num >= 1e9) return (num / 1e9).toFixed(1) + 'B';
-    if (num >= 1e6) return (num / 1e6).toFixed(1) + 'M';
-    if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
-    return new Intl.NumberFormat('en-US').format(Math.round(num));
-}
 
-function formatCurrency(num, showDecimals = false) {
-    if (!isFinite(num) || isNaN(num)) {
-        return "---";
+    function $(id) {
+        return document.getElementById(id);
     }
-    const options = {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: showDecimals ? 2 : 0,
-        maximumFractionDigits: showDecimals ? 2 : 0,
-    };
-    return new Intl.NumberFormat('en-US', options).format(num);
-}
 
-function calculateExpenses() {
-    totalExpenses = 0;
-    const expenseInputs = expenseItemsList.querySelectorAll('.expense-item-cost');
-    expenseInputs.forEach(input => {
-        const cost = parseFloat(input.value);
-        if (!isNaN(cost) && cost > 0) {
-            totalExpenses += cost;
+    function num(id, fallback) {
+        var el = $(id);
+        var value = el ? parseFloat(el.value) : NaN;
+        return isFinite(value) ? value : fallback;
+    }
+
+    function checkedRadio(name) {
+        var el = document.querySelector('input[name="' + name + '"]:checked');
+        return el ? el.value : null;
+    }
+
+    function checkedFullTarget() {
+        return checkedRadio("fullTargetType") || "ARR";
+    }
+
+    function formatNumber(value) {
+        if (!isFinite(value)) return "—";
+        var abs = Math.abs(value);
+        if (abs >= 1e9) return (value / 1e9).toFixed(2) + "B";
+        if (abs >= 1e6) return (value / 1e6).toFixed(2) + "M";
+        if (abs >= 1e3) return (value / 1e3).toFixed(1) + "K";
+        return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(Math.round(value));
+    }
+
+    function formatCurrency(value, digits) {
+        if (!isFinite(value)) return "—";
+        return new Intl.NumberFormat("en-US", {
+            style: "currency",
+            currency: "USD",
+            minimumFractionDigits: digits == null ? 0 : digits,
+            maximumFractionDigits: digits == null ? 0 : digits
+        }).format(value);
+    }
+
+    function formatRatio(value, suffix) {
+        if (value === Infinity) return "∞";
+        if (!isFinite(value)) return "—";
+        return value.toFixed(2) + (suffix || "x");
+    }
+
+    function formatPct(value) {
+        if (!isFinite(value)) return "—";
+        return (value * 100).toFixed(1) + "%";
+    }
+
+    function formatMonths(value) {
+        if (value === Infinity) return ">120 mo";
+        if (!isFinite(value)) return "—";
+        return value.toFixed(1) + " mo";
+    }
+
+    function toneClass(tone) {
+        if (tone === "danger" || tone === "good" || tone === "ok" || tone === "muted") return tone;
+        return "";
+    }
+
+    function readExpenses() {
+        var total = 0;
+        var nodes = document.querySelectorAll("#expenseList .expense-cost");
+        var i;
+        var cost;
+        for (i = 0; i < nodes.length; i++) {
+            cost = parseFloat(nodes[i].value);
+            if (isFinite(cost) && cost > 0) total += cost;
         }
-    });
+        return total;
+    }
 
-    totalExpenseDisplay.textContent = formatCurrency(totalExpenses, true);
-    calculateNetAmount();
-}
+    function readState() {
+        return {
+            startingCash: num("startingCash", engine.DEFAULTS.startingCash),
+            startingMRR: num("startingMRR", engine.DEFAULTS.startingMRR),
+            arpu: num("arpu", engine.DEFAULTS.arpu),
+            grossMargin: num("grossMargin", 82) / 100,
+            existingAge: num("existingAge", engine.DEFAULTS.existingAge),
+            discountRateAnnual: num("discountRate", 10) / 100,
+            targetType: checkedFullTarget(),
+            targetValue: num("targetValue", engine.DEFAULTS.targetValue),
+            horizonMonths: parseInt(checkedRadio("horizon") || "18", 10),
+            sizeFunnelForOpex: $("sizeFunnelForOpex").checked,
+            monthlyLeads: num("monthlyLeads", engine.DEFAULTS.monthlyLeads),
+            leadGrowthRate: num("leadGrowthRate", 3) / 100,
+            interestRate: num("interestRate", 12) / 100,
+            conversionRate: num("conversionRate", 10) / 100,
+            inboundMix: num("inboundMix", 45) / 100,
+            inboundBaseCac: num("inboundBaseCac", engine.DEFAULTS.inboundBaseCac),
+            inboundCapacity: num("inboundCapacity", engine.DEFAULTS.inboundCapacity),
+            inboundElasticity: num("inboundElasticity", engine.DEFAULTS.inboundElasticity),
+            inboundConversionDecay: num("inboundConversionDecay", engine.DEFAULTS.inboundConversionDecay),
+            inboundCeiling: num("inboundCeiling", engine.DEFAULTS.inboundCeiling),
+            paidBaseCac: num("paidBaseCac", engine.DEFAULTS.paidBaseCac),
+            paidCapacity: num("paidCapacity", engine.DEFAULTS.paidCapacity),
+            paidElasticity: num("paidElasticity", engine.DEFAULTS.paidElasticity),
+            paidConversionDecay: num("paidConversionDecay", engine.DEFAULTS.paidConversionDecay),
+            paidCeiling: num("paidCeiling", engine.DEFAULTS.paidCeiling),
+            retentionCurve: checkedRadio("retentionCurve") || "weibull",
+            weibullK: num("weibullK", engine.DEFAULTS.weibullK),
+            weibullLambda: num("weibullLambda", engine.DEFAULTS.weibullLambda),
+            lognormalFastWeight: num("lognormalFastWeight", engine.DEFAULTS.lognormalFastWeight),
+            lognormalFastMu: num("lognormalFastMu", engine.DEFAULTS.lognormalFastMu),
+            lognormalFastSigma: num("lognormalFastSigma", engine.DEFAULTS.lognormalFastSigma),
+            lognormalSlowMu: num("lognormalSlowMu", engine.DEFAULTS.lognormalSlowMu),
+            lognormalSlowSigma: num("lognormalSlowSigma", engine.DEFAULTS.lognormalSlowSigma),
+            monthlyExpansion: num("monthlyExpansion", 3.2) / 100,
+            monthlyContraction: num("monthlyContraction", 0.5) / 100,
+            expansionCapMultiple: num("expansionCap", 2.5),
+            fixedOpex: num("fixedOpex", engine.DEFAULTS.fixedOpex),
+            otherOpex: readExpenses()
+        };
+    }
 
-function calculateNetAmount(achievedRevenue) {
-    const isVisible = expenseToggle.checked;
-    let netAmount = 0;
+    function setText(id, text) {
+        var el = $(id);
+        if (el) el.textContent = text;
+    }
 
-    if (!isVisible) {
-        netAmountDisplay.textContent = "N/A";
-        if(netResultNode) netResultNode.style.display = 'none'; // Hide flow node too
-        // Reset label
-        const netAmountLabelElement = netAmountDisplay.closest('p');
-        if (netAmountLabelElement && netAmountLabelElement.childNodes.length > 0) {
-            if (netAmountLabelElement.childNodes[0].nodeType === Node.TEXT_NODE) {
-                netAmountLabelElement.childNodes[0].nodeValue = "Net Amount: ";
+    function setGrade(id, tone, label) {
+        var el = $(id);
+        if (!el) return;
+        el.textContent = label;
+        el.className = "kpi-grade " + toneClass(tone);
+    }
+
+    function svgEl(name, attrs) {
+        var node = document.createElementNS("http://www.w3.org/2000/svg", name);
+        var key;
+        if (attrs) {
+            for (key in attrs) {
+                if (Object.prototype.hasOwnProperty.call(attrs, key)) {
+                    node.setAttribute(key, attrs[key]);
+                }
+            }
+        }
+        return node;
+    }
+
+    function polyline(values, x0, y0, w, h, min, max) {
+        var range = max - min || 1;
+        return values.map(function (v, i) {
+            var x = x0 + (values.length === 1 ? 0 : (i / (values.length - 1)) * w);
+            var y = y0 + h - ((v - min) / range) * h;
+            return x.toFixed(1) + "," + y.toFixed(1);
+        }).join(" ");
+    }
+
+    function renderCashChart(result) {
+        var host = $("cashChart");
+        host.innerHTML = "";
+        var cash = [result.config.startingCash].concat(result.months.map(function (m) { return m.cash; }));
+        var width = 760;
+        var height = 220;
+        var padL = 54;
+        var padR = 16;
+        var padT = 16;
+        var padB = 28;
+        var plotW = width - padL - padR;
+        var plotH = height - padT - padB;
+        var min = Math.min.apply(null, cash.concat([0]));
+        var max = Math.max.apply(null, cash.concat([0]));
+        var svg = svgEl("svg", { viewBox: "0 0 " + width + " " + height, role: "img" });
+        var pts = polyline(cash, padL, padT, plotW, plotH, min, max);
+        var zeroY = padT + plotH - ((0 - min) / ((max - min) || 1)) * plotH;
+        var area = "M" + pts.replace(/ /g, " L") + " L" + (padL + plotW) + "," + (padT + plotH) + " L" + padL + "," + (padT + plotH) + " Z";
+        var troughIdx = result.metrics.cash.troughMonth;
+        var troughVal = result.metrics.cash.troughCash;
+        var troughX = padL + (troughIdx / (cash.length - 1)) * plotW;
+        var troughY = padT + plotH - ((troughVal - min) / ((max - min) || 1)) * plotH;
+
+        svg.appendChild(svgEl("line", { x1: padL, x2: padL + plotW, y1: zeroY, y2: zeroY, stroke: "rgba(217,83,79,0.45)", "stroke-dasharray": "4 4" }));
+        svg.appendChild(svgEl("path", { d: area, fill: "rgba(74,144,226,0.12)" }));
+        svg.appendChild(svgEl("polyline", { points: pts, fill: "none", stroke: "#4a90e2", "stroke-width": "2.2" }));
+        svg.appendChild(svgEl("circle", { cx: troughX.toFixed(1), cy: troughY.toFixed(1), r: 5, fill: "#f0ad4e" }));
+        var troughLabel = svgEl("text", { x: Math.min(troughX + 8, width - 120).toFixed(1), y: Math.max(troughY - 8, 14).toFixed(1), class: "chart-label" });
+        troughLabel.textContent = "Trough " + formatCurrency(troughVal);
+        svg.appendChild(troughLabel);
+        var yMax = svgEl("text", { x: 6, y: padT + 10, class: "chart-label" });
+        yMax.textContent = formatCurrency(max);
+        svg.appendChild(yMax);
+        var yMin = svgEl("text", { x: 6, y: padT + plotH, class: "chart-label" });
+        yMin.textContent = formatCurrency(min);
+        svg.appendChild(yMin);
+        host.appendChild(svg);
+    }
+
+    function renderRetentionChart(result) {
+        var host = $("retentionChart");
+        host.innerHTML = "";
+        var pts = result.retentionCurve;
+        var width = 520;
+        var height = 210;
+        var padL = 36;
+        var padR = 10;
+        var padT = 12;
+        var padB = 24;
+        var plotW = width - padL - padR;
+        var plotH = height - padT - padB;
+        var svg = svgEl("svg", { viewBox: "0 0 " + width + " " + height });
+        var xs = function (arr, key) {
+            return polyline(arr.map(function (p) { return p[key]; }), padL, padT, plotW, plotH, 0, Math.max(1.4, Math.max.apply(null, arr.map(function (p) { return p.nrr; }))));
+        };
+        var maxNrr = Math.max(1.4, Math.max.apply(null, pts.map(function (p) { return p.nrr; })));
+        svg.appendChild(svgEl("line", {
+            x1: padL, x2: padL + plotW,
+            y1: padT + plotH - (1 / maxNrr) * plotH,
+            y2: padT + plotH - (1 / maxNrr) * plotH,
+            stroke: "rgba(232,238,247,0.15)", "stroke-dasharray": "3 4"
+        }));
+        svg.appendChild(svgEl("polyline", { points: xs(pts, "survival"), fill: "none", stroke: "#007bff", "stroke-width": "2" }));
+        svg.appendChild(svgEl("polyline", { points: xs(pts, "grr"), fill: "none", stroke: "#f0ad4e", "stroke-width": "2" }));
+        svg.appendChild(svgEl("polyline", { points: xs(pts, "nrr"), fill: "none", stroke: "#4CAF50", "stroke-width": "2" }));
+        var hundred = svgEl("text", { x: 4, y: padT + plotH - (1 / maxNrr) * plotH + 3, class: "chart-label" });
+        hundred.textContent = "100%";
+        svg.appendChild(hundred);
+        host.appendChild(svg);
+    }
+
+    function renderFlags(result) {
+        var list = $("flagList");
+        list.innerHTML = "";
+        result.flags.forEach(function (flag) {
+            var li = document.createElement("li");
+            li.className = "flag " + flag.severity;
+            var valueText;
+            if (flag.id === "nrr" || flag.id === "grr") valueText = formatPct(flag.value);
+            else if (flag.id === "payback" || flag.id === "runway") valueText = formatMonths(flag.value);
+            else if (flag.id === "defaultRisk") valueText = "M" + flag.value;
+            else if (flag.id === "saturation") valueText = formatCurrency(flag.value);
+            else valueText = formatRatio(flag.value);
+            li.innerHTML =
+                '<span class="flag-sev">' + (flag.severity === "pass" ? "Pass" : flag.severity) + "</span>" +
+                "<div><h3>" + flag.name + "</h3><p>" + flag.message + "</p></div>" +
+                '<span class="flag-value">' + valueText + "</span>";
+            list.appendChild(li);
+        });
+        setText("auditKicker", result.diligence.verdict + " · " + result.diligence.red + " red · " + result.diligence.watch + " watch");
+    }
+
+    function renderFunnel(result) {
+        var f = result.funnel;
+        var last = result.months[result.months.length - 1];
+        $("funnelSteps").innerHTML =
+            '<li class="funnel-step"><span class="n">1</span><span class="label">Reach / leads</span><span class="value">' + formatNumber(f.requiredReach) + '</span></li>' +
+            '<li class="funnel-step"><span class="n">2</span><span class="label">Free users</span><span class="value">' + formatNumber(f.requiredProspects) + '</span></li>' +
+            '<li class="funnel-step"><span class="n">3</span><span class="label">Customers</span><span class="value">' + formatNumber(f.requiredCustomers) + '</span></li>' +
+            '<li class="funnel-step"><span class="n">4</span><span class="label">' + (f.targetType === "Amount" ? "Amount" : "Target stock") + '</span><span class="value">' + formatCurrency(f.targetType === "ARR" ? f.targetValue : (f.targetMRR || f.targetValue)) + "</span></li>";
+
+        var coverage = f.coverage == null ? "" : " Horizon coverage vs target: " + formatPct(f.coverage) + ".";
+        var solve = result.leadSolve && !result.leadSolve.hitsTarget
+            ? " To close the gap at month " + result.config.horizonMonths + " you need about " + formatNumber(result.leadSolve.monthlyLeads) + " baseline monthly leads after saturation."
+            : (result.leadSolve && result.leadSolve.hitsTarget ? " Current lead plan is sufficient to hit the target inside the horizon." : "");
+        var sat = result.metrics.saturationWarning ? " Paid and/or inbound volume is past baseline capacity — CAC is compounding." : "";
+        setText("funnelNarrative",
+            "M1 blended CAC " + formatCurrency(result.metrics.blendedCac) +
+            " · M" + last.month + " blended CAC " + formatCurrency(result.metrics.horizonBlendedCac) +
+            " · projected ending ARR " + formatCurrency(result.metrics.endingARR) +
+            "." + coverage + solve + sat
+        );
+        setText("funnelKicker", result.months[0].newCustomers > 0
+            ? "M1 mix " + formatNumber(result.months[0].inboundCustomers) + " inbound / " + formatNumber(result.months[0].paidCustomers) + " paid logos"
+            : "Saturation-aware funnel");
+    }
+
+    function renderLedger(result) {
+        var tbody = $("ledgerTable").querySelector("tbody");
+        var trough = result.metrics.cash.troughMonth;
+        tbody.innerHTML = result.months.map(function (m) {
+            var leakage = m.churnedMRR + m.contractionMRR;
+            var cashClass = m.cash < 0 ? "neg" : "";
+            var burnClass = m.netBurn > 0 ? "neg" : "pos";
+            var rowClass = m.month === trough ? "trough-row" : "";
+            return "<tr class=\"" + rowClass + "\">" +
+                "<td>" + m.month + (m.month === trough ? " ▾" : "") + "</td>" +
+                "<td>" + formatNumber(m.leads) + "</td>" +
+                "<td>" + formatNumber(m.newCustomers) + "</td>" +
+                "<td>" + formatCurrency(m.endingMRR) + "</td>" +
+                "<td>" + formatCurrency(m.newMRR) + "</td>" +
+                "<td>" + formatCurrency(m.expansionMRR) + "</td>" +
+                "<td>" + formatCurrency(leakage) + "</td>" +
+                "<td>" + formatCurrency(m.smSpend) + "</td>" +
+                "<td class=\"" + burnClass + "\">" + formatCurrency(m.netBurn) + "</td>" +
+                "<td class=\"" + cashClass + "\">" + formatCurrency(m.cash) + "</td>" +
+                "<td>" + (m.quickRatio === Infinity ? "∞" : formatRatio(m.quickRatio, "")) + "</td>" +
+                "</tr>";
+        }).join("");
+    }
+
+    function renderCashStats(result) {
+        var c = result.metrics.cash;
+        $("cashStats").innerHTML =
+            '<div class="stat"><span>Cash trough</span><strong>' + formatCurrency(c.troughCash) + "</strong></div>" +
+            '<div class="stat"><span>Trough month</span><strong>M' + c.troughMonth + "</strong></div>" +
+            '<div class="stat"><span>Drawdown</span><strong>' + formatCurrency(c.troughDepth) + "</strong></div>" +
+            '<div class="stat"><span>Min raise to clear trough</span><strong>' + formatCurrency(c.minVentureFunding) + "</strong></div>";
+        var runwayText = c.survivesHorizon ? (result.config.horizonMonths + "+ mo") : formatMonths(c.runwayMonths);
+        setText("troughKicker",
+            "Runway " + runwayText +
+            (c.cashFlowBreakevenMonth ? " · cash-flow breakeven M" + c.cashFlowBreakevenMonth : " · no CF breakeven in horizon") +
+            " · 3-month burn buffer " + formatCurrency(c.safetyBuffer)
+        );
+    }
+
+    function renderKpis(result) {
+        var m = result.metrics;
+        var c = m.cash;
+        setText("kpiMagic", isFinite(m.magicNumber) ? m.magicNumber.toFixed(2) : "—");
+        setGrade("kpiMagicGrade", m.magicGrade.tone, m.magicGrade.label);
+        setText("kpiBurn", m.burnMultiple === Infinity ? "∞" : (isFinite(m.burnMultiple) ? m.burnMultiple.toFixed(2) + "x" : "—"));
+        setGrade("kpiBurnGrade", m.burnGrade.tone, m.burnGrade.label);
+        setText("kpiNrr", formatPct(m.nrr));
+        setGrade("kpiNrrGrade", m.nrr >= 1 ? "good" : (m.nrr >= 0.9 ? "ok" : "danger"), "Modeled");
+        setText("kpiGrr", formatPct(m.grr));
+        setGrade("kpiGrrGrade", m.grr >= 0.85 ? "good" : "ok", "Modeled");
+        setText("kpiQuick", m.quickRatio === Infinity ? "∞" : formatRatio(m.quickRatio, ""));
+        setGrade("kpiQuickGrade", m.quickGrade.tone, m.quickGrade.label);
+        setText("kpiLtvCac", m.ltvCac === Infinity ? "∞" : formatRatio(m.ltvCac));
+        setGrade("kpiLtvCacGrade", isFinite(m.ltvCac) && m.ltvCac < 3 ? "danger" : "good", "GP LTV");
+        setText("kpiPayback", formatMonths(m.paybackMonths));
+        setGrade("kpiPaybackGrade", !isFinite(m.paybackMonths) || m.paybackMonths > 12 ? "danger" : "good", isFinite(m.paybackMonths) && m.paybackMonths <= 12 ? "Inside bar" : "Flag");
+        var runwayLabel = c.survivesHorizon ? result.config.horizonMonths + "+" : c.runwayMonths.toFixed(1);
+        setText("kpiRunway", runwayLabel + " mo");
+        setGrade("kpiRunwayGrade", c.survivesHorizon ? "good" : "danger", "Trough " + formatCurrency(c.troughDepth));
+
+        var pill = $("verdictPill");
+        pill.textContent = result.diligence.verdict;
+        pill.className = "verdict-pill " + (result.diligence.red ? "danger" : (result.diligence.watch ? "ok" : "good"));
+    }
+
+    function updateRetentionPreview(result) {
+        var m = result.metrics;
+        setText("retentionPreview",
+            "Month-1 logo churn " + formatPct(m.m1LogoChurn) +
+            " · month-3 logo retention " + formatPct(m.m3LogoRetention) +
+            " · 12-mo logo retention " + formatPct(m.logoRetention12) +
+            (m.realizedLegacyNrr != null ? " · realized book NRR " + formatPct(m.realizedLegacyNrr) : "") +
+            "."
+        );
+    }
+
+    function toggleCurveFields() {
+        var curve = checkedRadio("retentionCurve");
+        $("weibullFields").hidden = curve !== "weibull";
+        $("lognormalFields").hidden = curve !== "lognormal";
+    }
+
+    function boardSnapshot(result) {
+        var m = result.metrics;
+        var lines = [
+            "FUNNEL ESTIMATOR — BOARD SNAPSHOT",
+            "Verdict: " + result.diligence.verdict,
+            "Horizon: " + result.config.horizonMonths + " months",
+            "",
+            "CAPITAL EFFICIENCY",
+            "  Magic Number     " + (isFinite(m.magicNumber) ? m.magicNumber.toFixed(2) : "n/a") + "  (" + m.magicGrade.label + ")",
+            "  Burn Multiple    " + (isFinite(m.burnMultiple) ? m.burnMultiple.toFixed(2) + "x" : "n/a") + "  (" + m.burnGrade.label + ")",
+            "  NRR / GRR        " + formatPct(m.nrr) + " / " + formatPct(m.grr),
+            "  Quick Ratio      " + (m.quickRatio === Infinity ? "inf" : formatRatio(m.quickRatio, "")),
+            "  LTV : CAC        " + formatRatio(m.ltvCac) + "   GP LTV " + formatCurrency(m.ltv) + " / CAC " + formatCurrency(m.blendedCac),
+            "  CAC Payback      " + formatMonths(m.paybackMonths),
+            "",
+            "CASH",
+            "  Starting / ending cash  " + formatCurrency(m.cash.startingCash) + " → " + formatCurrency(m.cash.endingCash),
+            "  Trough                  " + formatCurrency(m.cash.troughCash) + " in month " + m.cash.troughMonth,
+            "  Drawdown                " + formatCurrency(m.cash.troughDepth),
+            "  Min raise to survive    " + formatCurrency(m.cash.minVentureFunding) + " (trough + 3 months peak burn)",
+            "  Runway                  " + (m.cash.survivesHorizon ? result.config.horizonMonths + "+ months" : formatMonths(m.cash.runwayMonths)),
+            "",
+            "GROWTH",
+            "  Starting ARR  " + formatCurrency(m.startingARR) + " → ending ARR " + formatCurrency(m.endingARR),
+            "  M1 CAC " + formatCurrency(m.blendedCac) + " → horizon CAC " + formatCurrency(m.horizonBlendedCac),
+            "",
+            "DILIGENCE FLAGS"
+        ];
+        result.flags.forEach(function (flag) {
+            lines.push("  [" + flag.severity.toUpperCase() + "] " + flag.name + " — " + flag.message);
+        });
+        return lines.join("\n");
+    }
+
+    function showToast(message) {
+        var toast = $("toast");
+        toast.textContent = message;
+        toast.hidden = false;
+        setTimeout(function () { toast.hidden = true; }, 1800);
+    }
+
+    function addExpenseItem(name, cost) {
+        var list = $("expenseList");
+        var row = document.createElement("div");
+        row.className = "expense-item";
+        row.innerHTML =
+            '<input type="text" class="expense-name" placeholder="Item (e.g. contractors)" value="' + (name || "") + '">' +
+            '<input type="number" class="expense-cost" min="0" step="100" placeholder="$/mo" value="' + (cost || "") + '">' +
+            '<button type="button" class="remove-expense-btn" title="Remove">×</button>';
+        row.querySelector(".expense-cost").addEventListener("input", recalculate);
+        row.querySelector(".remove-expense-btn").addEventListener("click", function () {
+            row.remove();
+            recalculate();
+        });
+        list.appendChild(row);
+    }
+
+    var lastResult = null;
+    var lastTargetType = checkedFullTarget();
+
+    function convertTargetOnTypeChange() {
+        var next = checkedFullTarget();
+        var val = num("targetValue", 0);
+        if (next !== lastTargetType && isFinite(val) && val > 0) {
+            if (lastTargetType === "ARR" && next === "MRR") {
+                $("targetValue").value = String(Math.round(val / 12));
+            } else if (lastTargetType === "MRR" && next === "ARR") {
+                $("targetValue").value = String(Math.round(val * 12));
+            }
+        }
+        lastTargetType = next;
+    }
+
+    function recalculate() {
+        convertTargetOnTypeChange();
+        $("inboundMixLabel").textContent = Math.round(num("inboundMix", 45)) + "%";
+        toggleCurveFields();
+        lastResult = engine.simulate(readState());
+        renderKpis(lastResult);
+        renderFlags(lastResult);
+        renderCashStats(lastResult);
+        renderCashChart(lastResult);
+        renderRetentionChart(lastResult);
+        renderFunnel(lastResult);
+        renderLedger(lastResult);
+        updateRetentionPreview(lastResult);
+    }
+
+    function applyMode(isMinimal) {
+        document.body.classList.toggle("minimal-mode", isMinimal);
+        document.body.classList.toggle("full-mode", !isMinimal);
+        $("minimalApp").hidden = !isMinimal;
+        $("fullApp").hidden = isMinimal;
+        $("helpMinimal").hidden = !isMinimal;
+        $("helpFull").hidden = isMinimal;
+        $("helpTitle").textContent = isMinimal ? "How to Use This Calculator" : "Methodology";
+        $("minimalModeToggle").checked = isMinimal;
+        try {
+            localStorage.setItem("funnelEstimator.minimal", isMinimal ? "1" : "0");
+        } catch (err) {
+            /* ignore quota / private mode */
+        }
+        if (isMinimal && typeof window.calculatePath === "function") {
+            window.calculatePath();
+        } else if (!isMinimal) {
+            recalculate();
+        }
+    }
+
+    function bind() {
+        var controls = $("controls");
+        controls.addEventListener("input", recalculate);
+        controls.addEventListener("change", recalculate);
+        $("addExpenseBtn").addEventListener("click", function () {
+            addExpenseItem("", "");
+        });
+        $("copyBoardBtn").addEventListener("click", function () {
+            if (!lastResult) return;
+            var text = boardSnapshot(lastResult);
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(function () {
+                    showToast("Board snapshot copied");
+                }).catch(function () {
+                    showToast("Copy failed");
+                });
             } else {
-                netAmountLabelElement.insertBefore(document.createTextNode("Net Amount: "), netAmountLabelElement.firstChild);
+                showToast("Clipboard unavailable");
             }
-        }
-        return 0; // Return 0 or NaN? Let's return 0 for consistency
+        });
+        $("helpButton").addEventListener("click", function () {
+            $("helpModal").hidden = false;
+        });
+        $("helpModal").querySelector(".close-help-button").addEventListener("click", function () {
+            $("helpModal").hidden = true;
+        });
+        $("helpModal").addEventListener("click", function (event) {
+            if (event.target === $("helpModal")) $("helpModal").hidden = true;
+        });
+        $("minimalModeToggle").addEventListener("change", function () {
+            applyMode($("minimalModeToggle").checked);
+        });
     }
 
-    const selectedTargetType = document.querySelector('input[name="targetType"]:checked').value;
-    const isAdjusted = adjustForExpenseToggle.checked;
-    let netLabel = "Net Amount (Achieved - Expenses): ";
-    if (isFinite(achievedRevenue)) {
-        netAmount = achievedRevenue - totalExpenses;
-    } else {
-        netAmount = -totalExpenses;
+    bind();
+    var savedMinimal = false;
+    try {
+        savedMinimal = localStorage.getItem("funnelEstimator.minimal") === "1";
+    } catch (err) {
+        savedMinimal = false;
     }
-    // Adjust label based on context
-    if (selectedTargetType === 'MRR') {
-        netLabel = isAdjusted ? "Net MRR (Achieved MRR - Expenses): " : "Net MRR (Target MRR - Expenses): ";
-        if (!isAdjusted) {
-            const targetInputVal = parseFloat(targetAmountInput.value);
-            netAmount = (!isNaN(targetInputVal) ? targetInputVal : 0) - totalExpenses;
-        }
-    } else if (selectedTargetType === 'ARR') {
-        netLabel = isAdjusted ? "Net ARR (Achieved ARR - Expenses): " : "Net ARR (Target ARR - Expenses): ";
-        if (!isAdjusted) {
-            const targetInputVal = parseFloat(targetAmountInput.value);
-            netAmount = (!isNaN(targetInputVal) ? targetInputVal : 0) - totalExpenses;
-        }
-    } else {
-        netLabel = isAdjusted ? "Net Amount (Achieved Total - Expenses): " : "Net Amount (Target Total - Expenses): ";
-        if (!isAdjusted) {
-            const targetInputVal = parseFloat(targetAmountInput.value);
-            netAmount = (!isNaN(targetInputVal) ? targetInputVal : 0) - totalExpenses;
-        }
-    }
-
-    // Update summary display
-    const netAmountLabelElement = netAmountDisplay.closest('p');
-    if (netAmountLabelElement && netAmountLabelElement.childNodes.length > 0) {
-        if (netAmountLabelElement.childNodes[0].nodeType === Node.TEXT_NODE) {
-            netAmountLabelElement.childNodes[0].nodeValue = netLabel;
-        } else {
-            netAmountLabelElement.insertBefore(document.createTextNode(netLabel), netAmountLabelElement.firstChild);
-            // Remove potential old span if it exists and isn't the one we want
-            if (netAmountLabelElement.childNodes.length > 2 && netAmountLabelElement.childNodes[1].nodeName !== 'SPAN') {
-                netAmountLabelElement.removeChild(netAmountLabelElement.childNodes[1]);
-            }
-        }
-    }
-    netAmountDisplay.textContent = formatCurrency(netAmount, true);
-
-    // Update and show/hide the Net Result flow node
-    if (netResultNode && flowNetValueDisplay) {
-        flowNetValueDisplay.textContent = formatCurrency(netAmount, true); // Use decimal version here?
-        netResultNode.style.display = 'flex'; // Show the node (use flex as it contains arrow+step)
-    } else if (netResultNode) {
-        netResultNode.style.display = 'none'; // Hide if elements not found (shouldn't happen)
-    }
-    
-    return netAmount; // Return calculated amount
-}
-
-function addExpenseItem(defaultName = '', defaultCost = '') {
-    const itemDiv = document.createElement('div');
-    itemDiv.classList.add('expense-item');
-
-    const nameInput = document.createElement('input');
-    nameInput.type = 'text';
-    nameInput.placeholder = 'Expense Name (e.g., Ads)';
-    nameInput.classList.add('expense-item-name');
-    nameInput.value = defaultName; // Set default name
-
-    const costInput = document.createElement('input');
-    costInput.type = 'number';
-    costInput.placeholder = 'Cost ($/mo)'; // Indicate monthly assumption
-    costInput.step = '0.01';
-    costInput.min = '0';
-    costInput.classList.add('expense-item-cost');
-    costInput.value = defaultCost; // Set default cost
-    costInput.addEventListener('input', () => {
-        calculatePath(); // Recalculate the whole path
-    });
-
-    const removeBtn = document.createElement('button');
-    removeBtn.textContent = 'X';
-    removeBtn.classList.add('remove-expense-btn');
-    removeBtn.title = 'Remove Expense';
-    removeBtn.addEventListener('click', () => {
-        itemDiv.remove();
-        calculatePath(); // Recalculate the whole path
-    });
-
-    itemDiv.appendChild(nameInput);
-    itemDiv.appendChild(costInput);
-    itemDiv.appendChild(removeBtn);
-    expenseItemsList.appendChild(itemDiv);
-
-    // If adding default items, don't focus. Otherwise, focus the name.
-    if (!defaultName && !defaultCost) {
-        nameInput.focus();
-    }
-}
-
-function updateTargetTooltip() {
-    if (!targetAmountGroup) return; // Guard clause
-
-    const selectedType = document.querySelector('input[name="targetType"]:checked').value;
-    let tooltipText = '';
-
-    if (selectedType === 'Amount') {
-        tooltipText = 'What is the total amount you want to earn?';
-    } else if (selectedType === 'MRR') {
-        tooltipText = 'How much recurring revenue do you want to earn each month?';
-    } else { // Assuming ARR is the only other option
-        tooltipText = 'How much recurring revenue do you want to earn each year?';
-    }
-    targetAmountGroup.title = tooltipText;
-}
-
-function calculatePath() {
-    const targetInputVal = parseFloat(targetAmountInput.value);
-    const itemPrice = parseFloat(itemPriceInput.value);
-    const initialConversionPercent = parseFloat(initialConversionInput.value);
-    const finalConversionPercent = parseFloat(finalConversionInput.value);
-    const selectedTargetType = document.querySelector('input[name="targetType"]:checked').value;
-    const expensesEnabled = expenseToggle.checked;
-    const adjustForExpenses = expensesEnabled && adjustForExpenseToggle.checked;
-    const churnEnabled = churnToggle.checked;
-    const monthlyChurnRate = churnEnabled ? (parseFloat(churnRateInput.value) / 100) : 0;
-    const isValidChurn = churnEnabled ? (!isNaN(monthlyChurnRate) && monthlyChurnRate >= 0 && monthlyChurnRate < 1) : true;
-    const initialConversion = initialConversionPercent / 100;
-    const finalConversion = finalConversionPercent / 100;
-
-    // Input Validation
-    const isValidBase = !isNaN(targetInputVal) && targetInputVal > 0 &&
-                        !isNaN(itemPrice) && itemPrice > 0 &&
-                        !isNaN(initialConversion) && initialConversion > 0 && initialConversion <= 1 &&
-                        !isNaN(finalConversion) && finalConversion > 0 && finalConversion <= 1 &&
-                        isValidChurn; // Add churn validity check
-
-    // Clear previous states
-    containerDiv.classList.remove('results-error');
-    // Make MRR/ARR displays visible by default, content will be set later
-    potentialMRRDisplay.style.display = 'block';
-    potentialARRDisplay.style.display = 'block';
-
-    if (!isValidBase) {
-        salesNeededDisplay.textContent = 'Please enter valid positive numbers for all fields (percentages between 0.01 and 100).';
-        prospectsNeededDisplay.textContent = '';
-        reachNeededDisplay.textContent = '';
-        potentialMRRDisplay.textContent = '';
-        potentialARRDisplay.textContent = '';
-
-        containerDiv.classList.add('results-error');
-
-        // Clear flow diagram
-        flowReachDisplay.textContent = '---';
-        flowProspectsDisplay.textContent = '---';
-        flowCustomersDisplay.textContent = '---';
-        flowTargetDisplay.textContent = '---';
-         // Safely try to reset label
-        const flowTargetLabelElement = document.getElementById('flowTarget')?.previousElementSibling;
-        if (flowTargetLabelElement) flowTargetLabelElement.textContent = "Target Met";
-        flowInitialRateDisplay.textContent = '--';
-        flowFinalRateDisplay.textContent = '--';
-
-        calculateExpenses(); // Update expense display even on error
-        return;
-    }
-
-    // Calculate current total expenses (same as before)
-    calculateExpenses();
-
-    // Determine Effective Target (if adjusting) (same as before)
-    let effectiveTarget = targetInputVal;
-    let adjustmentReason = ""; // To append to goal text
-
-    // Adjust for Expenses
-    if (isValidBase && adjustForExpenses) {
-        adjustmentReason = " (inc. expenses";
-        if (selectedTargetType === 'Amount') {
-            effectiveTarget = targetInputVal + totalExpenses;
-        } else if (selectedTargetType === 'MRR') {
-            effectiveTarget = targetInputVal + totalExpenses;
-        } else { // ARR
-            effectiveTarget = targetInputVal + (totalExpenses * 12);
-        }
-        if (effectiveTarget < 0) effectiveTarget = 0;
-    }
-
-    // Adjust for Churn (applies only to MRR/ARR targets)
-    if (isValidBase && churnEnabled && (selectedTargetType === 'MRR' || selectedTargetType === 'ARR')) {
-        if (!isValidChurn) {
-             // Should be caught by isValidBase, but double-check
-        } else {
-            // Avoid division by zero or near-zero
-            if (1 - monthlyChurnRate > 0.0001) { // Check if denominator is reasonably > 0
-                 effectiveTarget = effectiveTarget / (1 - monthlyChurnRate);
-                 adjustmentReason += (adjustmentReason ? ", churn" : " (inc. churn"); // Append churn reason
-            } else {
-                 // Handle impossible situation (100% churn or invalid rate)
-                 // Maybe set effectiveTarget to Infinity or handle as error? For now, let it be very large.
-                 effectiveTarget = Infinity; 
-                 // We should ideally show an error state more clearly here.
-            }
-        }
-        if (effectiveTarget < 0) effectiveTarget = 0; // Recalc check after churn
-    }
-     if (adjustmentReason) adjustmentReason += ")"; // Close parenthesis if any adjustment happened
-
-    // Core Path Calculations (use effectiveTarget if adjusting, targetInputVal otherwise for display base)
-    // Determine the target value used for calculations based on adjustment state
-    const calculationTarget = (adjustForExpenses || (churnEnabled && selectedTargetType !== 'Amount')) ? effectiveTarget : targetInputVal;
-
-    let salesNeeded = 0;
-    let calculatedMonthlyRevenue = 0;
-    let displayTargetValue = targetInputVal; // For the MRR/ARR lines and Goal text baseline
-    let flowTargetDisplayValue = calculationTarget; // Value shown in the flow diagram bubble
-    let goalDescriptionBase = ""; // Describes the original goal
-    let flowTargetLabel = "Target Met";
-    let achievedRevenueForPeriod = NaN;
-    let timeQualifier = ""; // NEW: For path description
-
-    if (selectedTargetType === 'Amount') {
-        salesNeeded = calculationTarget / itemPrice;
-        achievedRevenueForPeriod = salesNeeded * itemPrice;
-        goalDescriptionBase = `Earn ${formatCurrency(targetInputVal)} total`; // Original goal
-        flowTargetLabel = adjustForExpenses ? "Adjusted Target" : "Total Target";
-        flowTargetDisplayValue = achievedRevenueForPeriod; // Show the calculated total goal in flow
-        timeQualifier = "total"; // Set time qualifier
-        potentialMRRDisplay.textContent = `(Implied MRR N/A for Total Target)`;
-        potentialARRDisplay.textContent = `(Implied ARR N/A for Total Target)`;
-
-    } else if (selectedTargetType === 'MRR') {
-        salesNeeded = calculationTarget / itemPrice;
-        calculatedMonthlyRevenue = salesNeeded * itemPrice;
-        achievedRevenueForPeriod = calculatedMonthlyRevenue;
-        displayTargetValue = targetInputVal; // Original target
-        goalDescriptionBase = `Achieve ${formatCurrency(targetInputVal)} MRR`;
-        flowTargetLabel = (adjustForExpenses || churnEnabled) ? "Adjusted MRR" : "Target MRR";
-        flowTargetDisplayValue = calculatedMonthlyRevenue; // Show the calculated MRR goal in flow
-        timeQualifier = "per month"; // Set time qualifier
-        potentialMRRDisplay.textContent = `Target MRR: ${formatCurrency(targetInputVal)}`;
-        potentialARRDisplay.textContent = `Equivalent ARR: ${formatCurrency(targetInputVal * 12)}`;
-
-    } else { // ARR
-        const monthlyCalculationTarget = calculationTarget / 12;
-        salesNeeded = monthlyCalculationTarget / itemPrice;
-        calculatedMonthlyRevenue = salesNeeded * itemPrice;
-        achievedRevenueForPeriod = calculatedMonthlyRevenue * 12;
-        displayTargetValue = targetInputVal; // Original target
-        goalDescriptionBase = `Achieve ${formatCurrency(targetInputVal)} ARR`;
-        flowTargetLabel = (adjustForExpenses || churnEnabled) ? "Adjusted ARR" : "Target ARR";
-        flowTargetDisplayValue = achievedRevenueForPeriod; // Show the calculated ARR goal in flow
-        timeQualifier = "per month"; // Set time qualifier
-        potentialMRRDisplay.textContent = `Equivalent MRR: ${formatCurrency(targetInputVal / 12)}`;
-        potentialARRDisplay.textContent = `Target ARR: ${formatCurrency(targetInputVal)}`;
-    }
-
-    const prospectsNeeded = salesNeeded / finalConversion;
-    const reachNeeded = prospectsNeeded / initialConversion;
-
-    // Goal text now reflects the *target* (original or adjusted based on toggle)
-    let displayedGoalValue = (adjustForExpenses || (churnEnabled && selectedTargetType !== 'Amount')) ? effectiveTarget : targetInputVal;
-    // Ensure correct period for goal description value
-    if (selectedTargetType === 'ARR' && !adjustForExpenses) displayedGoalValue = targetInputVal;
-    if (selectedTargetType === 'ARR' && adjustForExpenses) displayedGoalValue = effectiveTarget;
-    if (selectedTargetType === 'MRR' && !adjustForExpenses) displayedGoalValue = targetInputVal;
-    if (selectedTargetType === 'MRR' && adjustForExpenses) displayedGoalValue = effectiveTarget;
-    
-    let dynamicGoalDescription = ``;
-    if (selectedTargetType === 'Amount') dynamicGoalDescription = `Earn ${formatCurrency(displayedGoalValue)} total`;
-    if (selectedTargetType === 'MRR') dynamicGoalDescription = `Achieve ${formatCurrency(displayedGoalValue)} MRR`;
-    if (selectedTargetType === 'ARR') dynamicGoalDescription = `Achieve ${formatCurrency(displayedGoalValue)} ARR`;
-
-
-    salesNeededDisplay.textContent = `1. Goal: ${dynamicGoalDescription} by selling units at ${formatCurrency(itemPrice)} each.${adjustmentReason}`;
-    prospectsNeededDisplay.textContent = `2. Strategy: Reach ${formatNumber(reachNeeded)} people ${timeQualifier} to get ${formatNumber(prospectsNeeded)} free users (at ${initialConversionPercent}% initial interest).`;
-    const customerNoun = (selectedTargetType === 'Amount') ? "customers total" : "customers per month";
-    reachNeededDisplay.textContent = `3. Outcome: Convert ${formatNumber(salesNeeded)} ${customerNoun} ${timeQualifier} from free users (at ${finalConversionPercent}% conversion) to meet the goal.`;
-
-    // Flow Diagram uses adjusted numbers
-    flowReachDisplay.textContent = formatNumber(reachNeeded);
-    flowProspectsDisplay.textContent = formatNumber(prospectsNeeded);
-    flowCustomersDisplay.textContent = formatNumber(salesNeeded);
-    const flowTargetLabelElement = document.getElementById('flowTarget')?.previousElementSibling;
-    if (flowTargetLabelElement) flowTargetLabelElement.textContent = flowTargetLabel;
-    // Display the target value consistent with the calculations (effective or original)
-    flowTargetDisplay.textContent = formatCurrency(flowTargetDisplayValue);
-    flowInitialRateDisplay.textContent = initialConversionPercent;
-    flowFinalRateDisplay.textContent = finalConversionPercent;
-
-    // 8. Calculate and Update ADVANCED Metrics (only if enabled)
-    if (advancedToggle && advancedFeaturesDiv) {
-        // --- DEBUGGING LOGS --- 
-        console.log("--- Advanced Metrics Debug ---");
-        console.log("Advanced Enabled:", advancedToggle.checked);
-        console.log("Churn Enabled:", churnEnabled);
-        console.log("Is Valid Churn Logic:", isValidChurn);
-        console.log("Monthly Churn Rate (Decimal):", monthlyChurnRate);
-        console.log("Item Price:", itemPrice);
-        console.log("CAC Parsed Value:", cacInput.value);
-        console.log("Is Valid CAC Logic:", cacInput.value > 0);
-        // --- END DEBUGGING --- 
-        
-        let ltv = NaN;
-        let ltvCacRatio = NaN;
-        let paybackMonths = NaN;
-        let showWarning = false;
-        let warningTitle = "";
-
-        // Calculate LTV 
-        if (churnEnabled && isValidChurn && itemPrice > 0) {
-            if (monthlyChurnRate > 0) {
-                 ltv = itemPrice / monthlyChurnRate;
-            } else if (monthlyChurnRate === 0) {
-                 ltv = Infinity; 
-            }
-        }
-        console.log("Calculated LTV:", ltv); // Log calculated LTV
-        
-        // Check for Warning Condition (Use cac and isValidCAC)
-        if (isFinite(ltv) && ltv > 0 && cacInput.value > 0 && cacInput.value > ltv) {
-            showWarning = true;
-            warningTitle = "This suggests you might be spending more to acquire a customer than they are worth over their lifetime, which is generally unsustainable.";
-        }
-
-        // Calculate LTV/CAC Ratio (Use cac and isValidCAC)
-        if (isFinite(ltv) && ltv > 0 && cacInput.value > 0) {
-            ltvCacRatio = ltv / cacInput.value;
-        }
-
-        // Calculate Payback Period (Use cac and isValidCAC)
-        if (cacInput.value >= 0 && itemPrice > 0) {
-            paybackMonths = cacInput.value / itemPrice;
-        }
-
-        // Update Metric Displays
-        ltvDisplay.textContent = isFinite(ltv) ? formatCurrency(ltv) : (ltv === Infinity ? 'Infinite (0% Churn)' : 'N/A');
-        ltvCacRatioDisplay.textContent = !isNaN(ltvCacRatio) ? ltvCacRatio.toFixed(1) : 'N/A';
-        paybackPeriodDisplay.textContent = !isNaN(paybackMonths) ? `${paybackMonths.toFixed(1)} Months` : 'N/A';
-
-        // Update Warning Display
-        if (cacWarning) { 
-            if (showWarning) {
-                cacWarning.textContent = "Warning: CAC > LTV";
-                cacWarning.title = warningTitle;
-                cacWarning.style.display = 'block';
-            } else {
-                cacWarning.style.display = 'none';
-                cacWarning.textContent = "";
-                cacWarning.title = "";
-            }
-        }
-
-    } else {
-         // Ensure advanced metrics AND warning are cleared if toggle is off
-         ltvDisplay.textContent = 'N/A';
-         ltvCacRatioDisplay.textContent = 'N/A';
-         paybackPeriodDisplay.textContent = 'N/A';
-         if (cacWarning) {
-             cacWarning.style.display = 'none';
-             cacWarning.textContent = "";
-             cacWarning.title = "";
-         }
-    }
-
-    // Calculate Net Amount and update its display (including the flow node)
-    calculateNetAmount(achievedRevenueForPeriod);
-}
-
-// --- Event Listeners ---
-
-// Calculate path on main input change
-[targetAmountInput, itemPriceInput, initialConversionInput, finalConversionInput].forEach(input => {
-    input.addEventListener('input', calculatePath);
-});
-
-// Calculate path when target type changes
-targetTypeRadios.forEach(radio => {
-    radio.addEventListener('change', () => {
-        updateTargetTooltip(); // Update the tooltip
-        calculatePath();       // Recalculate the path
-    });
-});
-
-// Expense Toggle Listener
-expenseToggle.addEventListener('change', () => {
-    const isChecked = expenseToggle.checked;
-    expenseCalculatorDiv.style.display = isChecked ? 'block' : 'none';
-
-    // If turning on AND the list is empty, add defaults
-    if (isChecked && expenseItemsList.children.length === 0) {
-        addExpenseItem('Product Building Cost', ''); // Add with empty cost initially
-        addExpenseItem('Marketing Cost', '');
-    }
-
-    // Always recalculate path when toggle changes (affects expense visibility/adjustment)
-    calculatePath();
-});
-
-// NEW: Listener for the Adjust for Expenses toggle
-adjustForExpenseToggle.addEventListener('change', calculatePath);
-
-// Add Expense Button Listener
-addExpenseBtn.addEventListener('click', () => addExpenseItem()); // Use default empty values
-
-// NEW: Churn Toggle Listener
-churnToggle.addEventListener('change', () => {
-    churnInputGroup.style.display = churnToggle.checked ? 'block' : 'none';
-    calculatePath(); // Recalculate when churn is toggled
-});
-
-// NEW: Churn Rate Input Listener
-churnRateInput.addEventListener('input', calculatePath);
-
-// Ensure Advanced Toggle Listener exists and is correct
-if (advancedToggle && advancedFeaturesDiv) { // Add checks for element existence
-    advancedToggle.addEventListener('change', () => {
-        advancedFeaturesDiv.style.display = advancedToggle.checked ? 'block' : 'none';
-        calculatePath(); // Recalculate when advanced view is toggled
-    });
-} else {
-    console.error("Advanced toggle elements not found!");
-}
-
-// Ensure CAC Input Listener exists
-if(cacInput) {
-    cacInput.addEventListener('input', calculatePath);
-} else {
-     console.error("CAC input element not found!");
-}
-
-// NEW: Help Modal Listeners
-if (helpButton && helpModal && closeHelpButton) {
-    helpButton.addEventListener('click', () => {
-        helpModal.style.display = 'block'; // Or 'flex' if using flex for centering
-    });
-
-    closeHelpButton.addEventListener('click', () => {
-        helpModal.style.display = 'none';
-    });
-
-    // Optional: Close when clicking outside the modal content
-    helpModal.addEventListener('click', (event) => {
-        if (event.target === helpModal) { // Check if the click is on the overlay itself
-            helpModal.style.display = 'none';
-        }
-    });
-} else {
-    console.error("Help modal elements not found!");
-}
-
-// --- Initial Load ---
-expenseCalculatorDiv.style.display = expenseToggle.checked ? 'block' : 'none';
-// Add default expenses on initial load if toggle is checked and list is empty
-if (expenseToggle.checked && expenseItemsList.children.length === 0) {
-    addExpenseItem('Product Building Cost', '');
-    addExpenseItem('Marketing Cost', '');
-}
-// Ensure net result node is hidden initially unless expenses are somehow on by default
-if (netResultNode) {
-   netResultNode.style.display = expenseToggle.checked ? 'flex' : 'none';
-}
-updateTargetTooltip(); // Set initial tooltip based on default checked radio
-
-// Ensure Initial Load logic for Advanced section exists
-if (advancedToggle && advancedFeaturesDiv) { // Add checks
-    advancedFeaturesDiv.style.display = advancedToggle.checked ? 'block' : 'none';
-} else {
-    console.error("Cannot set initial display for Advanced Features - elements not found.");
-}
-
-calculatePath(); // Initial calculation 
+    applyMode(savedMinimal);
+})();

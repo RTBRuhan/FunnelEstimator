@@ -4,19 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Funnel Estimator</title>
+    <meta name="description" content="Funnel estimator and SaaS capital efficiency modeler.">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <div class="header-section">
-            <h1>Funnel Estimator</h1>
-            <div class="header-attribution">
-                 <a href="https://rtbruhan.github.io" target="_blank" rel="noopener noreferrer">Author : RTBRuhan</a>
-            </div>
+    <div class="container" id="appShell">
+    <header class="app-header">
+        <div class="header-mode">
+            <label class="switch">
+                <input type="checkbox" id="minimalModeToggle">
+                <span class="slider round"></span>
+            </label>
+            <label for="minimalModeToggle" class="toggle-label">Minimal mode</label>
         </div>
+        <h1>Funnel Estimator</h1>
+        <div class="header-actions">
+            <a class="author-link" href="https://rtbruhan.github.io" target="_blank" rel="noopener noreferrer">Author : RTBRuhan</a>
+        </div>
+    </header>
 
+    <div id="minimalApp" hidden>
         <div class="main-content-area">
-            <!-- Left Panel: Inputs and Expenses -->
             <div class="left-panel">
                 <div class="input-grid">
                     <div class="input-group" title="What is the total amount you want to earn? (If MRR/ARR is selected, this is your monthly/annual target).">
@@ -50,7 +58,6 @@
                     </div>
                 </div>
 
-                <!-- Churn Toggle -->
                 <div class="churn-toggle-section">
                      <label class="switch">
                          <input type="checkbox" id="churnToggle">
@@ -59,7 +66,6 @@
                      <label for="churnToggle" class="toggle-label">Calculate Monthly Churn?</label>
                 </div>
 
-                 <!-- Churn Input (Initially Hidden) -->
                 <div class="input-group" id="churn-input-group" style="display: none;" title="How many customers (as a percentage) do you lose every month?">
                     <label for="churnRate">Monthly Churn Rate (%):</label>
                     <input type="number" id="churnRate" value="5" step="0.1" min="0" max="100">
@@ -75,10 +81,8 @@
 
                 <div id="expense-calculator" style="display: none;">
                     <h2>Expenses:</h2>
-                    <div id="expense-items-list">
-                        <!-- Dynamic expense items will be added here -->
-                    </div>
-                    <button id="add-expense-btn">+ Add Expense Item</button>
+                    <div id="expense-items-list"></div>
+                    <button type="button" id="add-expense-btn">+ Add Expense Item</button>
 
                     <div class="expense-adjustment-toggle">
                          <label class="switch">
@@ -95,7 +99,6 @@
                     </div>
                 </div>
 
-                <!-- Advanced Toggle -->
                 <div class="advanced-toggle-section">
                      <label class="switch">
                          <input type="checkbox" id="advancedToggle">
@@ -105,35 +108,29 @@
                      <span class="beta-tag">Beta</span>
                 </div>
 
-                <!-- Advanced Features Section (Initially Hidden) -->
                 <div id="advanced-features" style="display: none;">
                     <h2>Advanced Metrics:</h2>
-                    <!-- CAC Input -->
                     <div class="input-group" title="Estimate of how much it costs, on average, to acquire one new paying customer (including marketing spend, sales costs, etc.).">
                         <label for="cacInput">Average Customer Acquisition Cost (CAC) ($):</label>
                         <input type="number" id="cacInput" value="100" step="1" min="0">
                     </div>
-                    <!-- Advanced Results -->
                     <div class="advanced-summary">
                          <p title="Lifetime Value: Estimated total revenue from an average customer before they churn. Calculated as (Item Price / Monthly Churn Rate). Requires Churn to be enabled.">Est. Customer LTV: <span id="ltvDisplay">N/A</span></p>
                          <p title="LTV to CAC Ratio: Compares customer lifetime value to the cost of acquiring them. A ratio > 3 is often considered healthy.">LTV / CAC Ratio: <span id="ltvCacRatioDisplay">N/A</span></p>
                          <p title="Payback Period: Months needed for cumulative revenue from a customer to cover their acquisition cost. Calculated as (CAC / Item Price).">CAC Payback Period: <span id="paybackPeriodDisplay">N/A</span></p>
-                         <!-- NEW: Warning Message Placeholder -->
                          <p id="cacWarning" class="warning-message" style="display: none;" title=""></p>
                     </div>
                 </div>
+            </div>
 
-            </div> <!-- End Left Panel -->
-
-            <!-- Right Panel: Results and Flow -->
             <div class="right-panel">
                 <div id="results">
                     <h2>Your Path (Calculations):</h2>
                     <p id="salesNeeded"></p>
                     <p id="prospectsNeeded"></p>
                     <p id="reachNeeded"></p>
-                    <p id="potentialMRR" style="display: block;"></p>
-                    <p id="potentialARR" style="display: block;"></p>
+                    <p id="potentialMRR"></p>
+                    <p id="potentialARR"></p>
                 </div>
 
                 <div id="flow-diagram">
@@ -160,7 +157,6 @@
                         <span class="flow-label">Target Met</span>
                         <span class="flow-value" id="flowTarget">...</span>
                      </div>
-                     <!-- Net Result Node (Conditional) -->
                      <div id="net-result-node" style="display: none;">
                           <div class="flow-step" title="The final calculated amount after subtracting all expenses from the achieved revenue.">
                               <span class="flow-number">5</span>
@@ -169,25 +165,378 @@
                           </div>
                      </div>
                 </div>
-             </div> <!-- End Right Panel -->
+             </div>
+        </div>
+    </div>
 
-        </div> <!-- End Main Content Area -->
+    <div id="fullApp">
+        <div class="full-toolbar">
+            <p class="subtitle">Capital Efficiency &amp; Growth Modeler · Seed / Series A–B</p>
+            <div class="header-actions">
+                <span id="verdictPill" class="verdict-pill muted">Modeling…</span>
+                <button type="button" id="copyBoardBtn" class="btn btn-ghost" title="Copy a diligence snapshot for your board deck">Copy Board Snapshot</button>
+            </div>
+        </div>
 
-    </div> <!-- End Container -->
+    <section class="kpi-strip" id="kpiStrip" aria-label="Institutional SaaS metrics">
+        <article class="kpi-card" data-metric="magicNumber">
+            <span class="kpi-label">SaaS Magic Number</span>
+            <span class="kpi-value" id="kpiMagic">—</span>
+            <span class="kpi-grade" id="kpiMagicGrade">—</span>
+            <span class="kpi-hint">Net new ARR / prior-quarter S&amp;M</span>
+        </article>
+        <article class="kpi-card" data-metric="burnMultiple">
+            <span class="kpi-label">Burn Multiple</span>
+            <span class="kpi-value" id="kpiBurn">—</span>
+            <span class="kpi-grade" id="kpiBurnGrade">—</span>
+            <span class="kpi-hint">Net burn / net new ARR</span>
+        </article>
+        <article class="kpi-card" data-metric="nrr">
+            <span class="kpi-label">NRR · 12-mo</span>
+            <span class="kpi-value" id="kpiNrr">—</span>
+            <span class="kpi-grade" id="kpiNrrGrade">Modeled</span>
+            <span class="kpi-hint">Expansion net of churn &amp; contraction</span>
+        </article>
+        <article class="kpi-card" data-metric="grr">
+            <span class="kpi-label">GRR · 12-mo</span>
+            <span class="kpi-value" id="kpiGrr">—</span>
+            <span class="kpi-grade" id="kpiGrrGrade">Modeled</span>
+            <span class="kpi-hint">Retention excluding expansion</span>
+        </article>
+        <article class="kpi-card" data-metric="quickRatio">
+            <span class="kpi-label">Quick Ratio</span>
+            <span class="kpi-value" id="kpiQuick">—</span>
+            <span class="kpi-grade" id="kpiQuickGrade">—</span>
+            <span class="kpi-hint">Growth vs. leakage · healthy &gt; 4.0</span>
+        </article>
+        <article class="kpi-card" data-metric="ltvCac">
+            <span class="kpi-label">LTV : CAC</span>
+            <span class="kpi-value" id="kpiLtvCac">—</span>
+            <span class="kpi-grade" id="kpiLtvCacGrade">GP LTV</span>
+            <span class="kpi-hint">Floor 3.0x · cohort Weibull/log-normal</span>
+        </article>
+        <article class="kpi-card" data-metric="payback">
+            <span class="kpi-label">CAC Payback</span>
+            <span class="kpi-value" id="kpiPayback">—</span>
+            <span class="kpi-grade" id="kpiPaybackGrade">—</span>
+            <span class="kpi-hint">Months to recover blended CAC</span>
+        </article>
+        <article class="kpi-card" data-metric="runway">
+            <span class="kpi-label">Runway / Trough</span>
+            <span class="kpi-value" id="kpiRunway">—</span>
+            <span class="kpi-grade" id="kpiRunwayGrade">—</span>
+            <span class="kpi-hint">Months to default · cash trough depth</span>
+        </article>
+    </section>
 
-    <!-- Help Button -->
-    <button id="helpButton" class="help-button" title="Help / Manual">?</button>
+    <main class="layout">
+        <aside class="controls" id="controls">
+            <details class="panel" open>
+                <summary>Company snapshot</summary>
+                <div class="field-grid">
+                    <label class="field">
+                        <span>Starting cash ($)</span>
+                        <input type="number" id="startingCash" min="0" step="50000" value="2000000">
+                    </label>
+                    <label class="field">
+                        <span>Starting MRR ($)</span>
+                        <input type="number" id="startingMRR" min="0" step="1000" value="40000">
+                    </label>
+                    <label class="field">
+                        <span>ARPU / seat ($ / mo)</span>
+                        <input type="number" id="arpu" min="1" step="1" value="250">
+                    </label>
+                    <label class="field">
+                        <span>Gross margin (%)</span>
+                        <input type="number" id="grossMargin" min="1" max="100" step="0.5" value="82">
+                    </label>
+                    <label class="field">
+                        <span>Existing cohort age (mo)</span>
+                        <input type="number" id="existingAge" min="1" max="60" step="1" value="6">
+                    </label>
+                    <label class="field">
+                        <span>Discount rate (% / yr)</span>
+                        <input type="number" id="discountRate" min="0" max="40" step="0.5" value="10">
+                    </label>
+                </div>
+            </details>
 
-    <!-- Help Modal -->
-    <div id="helpModal" class="modal">
-        <div class="modal-content">
-            <button class="close-help-button" title="Close">&times;</button>
-            <h2>How to Use This Calculator</h2>
+            <details class="panel" open>
+                <summary>Target &amp; horizon</summary>
+                <div class="field">
+                    <span>Goal type</span>
+                    <div class="segmented" role="radiogroup" aria-label="Target type">
+                        <input type="radio" id="fullTargetTypeAmount" name="fullTargetType" value="Amount">
+                        <label for="fullTargetTypeAmount">Amount</label>
+                        <input type="radio" id="fullTargetTypeMRR" name="fullTargetType" value="MRR">
+                        <label for="fullTargetTypeMRR">MRR</label>
+                        <input type="radio" id="fullTargetTypeARR" name="fullTargetType" value="ARR" checked>
+                        <label for="fullTargetTypeARR">ARR</label>
+                    </div>
+                </div>
+                <label class="field">
+                    <span>Target ($)</span>
+                    <input type="number" id="targetValue" min="0" step="10000" value="2400000">
+                </label>
+                <div class="field">
+                    <span>Projection horizon</span>
+                    <div class="segmented" role="radiogroup" aria-label="Horizon">
+                        <input type="radio" id="horizon12" name="horizon" value="12">
+                        <label for="horizon12">12 mo</label>
+                        <input type="radio" id="horizon18" name="horizon" value="18" checked>
+                        <label for="horizon18">18 mo</label>
+                        <input type="radio" id="horizon24" name="horizon" value="24">
+                        <label for="horizon24">24 mo</label>
+                    </div>
+                </div>
+                <label class="check-row">
+                    <input type="checkbox" id="sizeFunnelForOpex">
+                    <span>Size the funnel so target also covers fixed opex</span>
+                </label>
+            </details>
+
+            <details class="panel" open>
+                <summary>Funnel &amp; growth</summary>
+                <div class="field-grid">
+                    <label class="field">
+                        <span>Monthly leads (baseline)</span>
+                        <input type="number" id="monthlyLeads" min="0" step="50" value="2500">
+                    </label>
+                    <label class="field">
+                        <span>Lead growth (% / mo)</span>
+                        <input type="number" id="leadGrowthRate" min="-20" max="50" step="0.5" value="3">
+                    </label>
+                    <label class="field">
+                        <span>Interest rate (%)</span>
+                        <input type="number" id="interestRate" min="0.01" max="100" step="0.1" value="12">
+                        <small>Reach → free users / prospects</small>
+                    </label>
+                    <label class="field">
+                        <span>Paid conversion (%)</span>
+                        <input type="number" id="conversionRate" min="0.01" max="100" step="0.1" value="10">
+                        <small>Prospects → customers (pre-saturation)</small>
+                    </label>
+                </div>
+            </details>
+
+            <details class="panel" open>
+                <summary>Channel mix — inbound vs paid</summary>
+                <label class="field">
+                    <span class="range-label">
+                        Inbound / PLG <strong id="inboundMixLabel">45%</strong>
+                        <span class="range-side">Paid / outbound</span>
+                    </span>
+                    <input type="range" id="inboundMix" min="0" max="100" step="1" value="45">
+                </label>
+                <p class="panel-note">Inbound has a lower CAC and a tighter ceiling. Paid scales further but CAC compounds once volume clears baseline capacity.</p>
+                <h3 class="subhead">Inbound / product-led</h3>
+                <div class="field-grid">
+                    <label class="field">
+                        <span>Base CAC ($)</span>
+                        <input type="number" id="inboundBaseCac" min="0" step="10" value="220">
+                    </label>
+                    <label class="field">
+                        <span>Baseline capacity (leads)</span>
+                        <input type="number" id="inboundCapacity" min="1" step="50" value="1000">
+                    </label>
+                    <label class="field">
+                        <span>CAC elasticity λ</span>
+                        <input type="number" id="inboundElasticity" min="0" max="2" step="0.05" value="0.20">
+                    </label>
+                    <label class="field">
+                        <span>Conversion decay μ</span>
+                        <input type="number" id="inboundConversionDecay" min="0" max="2" step="0.05" value="0.10">
+                    </label>
+                    <label class="field">
+                        <span>Ceiling (× capacity)</span>
+                        <input type="number" id="inboundCeiling" min="1" max="50" step="0.5" value="3">
+                    </label>
+                </div>
+                <h3 class="subhead">Outbound / paid</h3>
+                <div class="field-grid">
+                    <label class="field">
+                        <span>Base CAC ($)</span>
+                        <input type="number" id="paidBaseCac" min="0" step="10" value="1100">
+                    </label>
+                    <label class="field">
+                        <span>Baseline capacity (leads)</span>
+                        <input type="number" id="paidCapacity" min="1" step="50" value="2000">
+                    </label>
+                    <label class="field">
+                        <span>CAC elasticity λ</span>
+                        <input type="number" id="paidElasticity" min="0" max="3" step="0.05" value="0.60">
+                    </label>
+                    <label class="field">
+                        <span>Conversion decay μ</span>
+                        <input type="number" id="paidConversionDecay" min="0" max="3" step="0.05" value="0.28">
+                    </label>
+                    <label class="field">
+                        <span>Ceiling (× capacity)</span>
+                        <input type="number" id="paidCeiling" min="1" max="50" step="0.5" value="15">
+                    </label>
+                </div>
+            </details>
+
+            <details class="panel" open>
+                <summary>Cohort retention</summary>
+                <div class="field">
+                    <span>Decay curve</span>
+                    <div class="segmented" role="radiogroup" aria-label="Retention curve">
+                        <input type="radio" id="curveWeibull" name="retentionCurve" value="weibull" checked>
+                        <label for="curveWeibull">Weibull</label>
+                        <input type="radio" id="curveLognormal" name="retentionCurve" value="lognormal">
+                        <label for="curveLognormal">Log-normal mix</label>
+                    </div>
+                </div>
+                <div id="weibullFields" class="field-grid">
+                    <label class="field">
+                        <span>Shape k (&lt; 1 = early churn)</span>
+                        <input type="number" id="weibullK" min="0.2" max="3" step="0.01" value="0.62">
+                    </label>
+                    <label class="field">
+                        <span>Scale λ (months)</span>
+                        <input type="number" id="weibullLambda" min="1" max="240" step="1" value="90">
+                    </label>
+                </div>
+                <div id="lognormalFields" class="field-grid" hidden>
+                    <label class="field">
+                        <span>Fast-churn weight</span>
+                        <input type="number" id="lognormalFastWeight" min="0" max="1" step="0.01" value="0.18">
+                    </label>
+                    <label class="field">
+                        <span>Fast μ / σ</span>
+                        <div class="pair">
+                            <input type="number" id="lognormalFastMu" min="-2" step="0.05" value="0.15">
+                            <input type="number" id="lognormalFastSigma" min="0.05" step="0.05" value="0.45">
+                        </div>
+                    </label>
+                    <label class="field">
+                        <span>Slow μ / σ</span>
+                        <div class="pair">
+                            <input type="number" id="lognormalSlowMu" min="0" step="0.05" value="3.40">
+                            <input type="number" id="lognormalSlowSigma" min="0.05" step="0.05" value="0.70">
+                        </div>
+                    </label>
+                </div>
+                <div class="field-grid">
+                    <label class="field">
+                        <span>Expansion (% / mo)</span>
+                        <input type="number" id="monthlyExpansion" min="0" max="20" step="0.1" value="3.2">
+                    </label>
+                    <label class="field">
+                        <span>Contraction (% / mo)</span>
+                        <input type="number" id="monthlyContraction" min="0" max="20" step="0.1" value="0.5">
+                    </label>
+                    <label class="field">
+                        <span>Expansion cap (× ARPU)</span>
+                        <input type="number" id="expansionCap" min="1" max="10" step="0.1" value="2.5">
+                        <small>Stops infinite LTV when NRR &gt; 100%</small>
+                    </label>
+                </div>
+                <p class="panel-note" id="retentionPreview">Steep logo loss in months 1–3, then a flattening hazard into baseline net retention.</p>
+            </details>
+
+            <details class="panel" open>
+                <summary>Cost structure</summary>
+                <label class="field">
+                    <span>Fixed operating expense ($ / mo)</span>
+                    <input type="number" id="fixedOpex" min="0" step="1000" value="95000">
+                    <small>Team, G&amp;A, product — excluding S&amp;M which is derived from CAC × new logos</small>
+                </label>
+                <div class="expense-block">
+                    <div class="expense-head">
+                        <span>Additional monthly items</span>
+                        <button type="button" id="addExpenseBtn" class="btn btn-tiny">+ Add</button>
+                    </div>
+                    <div id="expenseList"></div>
+                </div>
+            </details>
+        </aside>
+
+        <section class="workspace">
+            <section class="card" id="auditCard">
+                <div class="card-head">
+                    <h2>VC diligence desk</h2>
+                    <span class="card-kicker" id="auditKicker">Four hard gates · Seed / Series A</span>
+                </div>
+                <ul class="flag-list" id="flagList"></ul>
+            </section>
+
+            <section class="card">
+                <div class="card-head">
+                    <h2>Cash path &amp; trough</h2>
+                    <span class="card-kicker" id="troughKicker">Maximum cumulative deficit before unit payback</span>
+                </div>
+                <div class="stat-row" id="cashStats"></div>
+                <div class="chart-wrap" id="cashChart" aria-label="Monthly cash balance chart"></div>
+            </section>
+
+            <section class="split">
+                <section class="card">
+                    <div class="card-head">
+                        <h2>Path to target</h2>
+                        <span class="card-kicker" id="funnelKicker">Saturation-aware funnel</span>
+                    </div>
+                    <ol class="funnel" id="funnelSteps"></ol>
+                    <p class="funnel-copy" id="funnelNarrative"></p>
+                </section>
+                <section class="card">
+                    <div class="card-head">
+                        <h2>Cohort decay</h2>
+                        <span class="card-kicker">S(t) · GRR · NRR</span>
+                    </div>
+                    <div class="chart-wrap" id="retentionChart" aria-label="Retention curve chart"></div>
+                    <div class="legend">
+                        <span><i class="swatch surv"></i> Logo survival</span>
+                        <span><i class="swatch grr"></i> GRR</span>
+                        <span><i class="swatch nrr"></i> NRR</span>
+                    </div>
+                </section>
+            </section>
+
+            <section class="card">
+                <div class="card-head">
+                    <h2>Monthly ledger</h2>
+                    <span class="card-kicker">Forward simulation · cash, burn, and net-new MRR</span>
+                </div>
+                <div class="table-wrap">
+                    <table class="ledger" id="ledgerTable">
+                        <thead>
+                            <tr>
+                                <th>Mo</th>
+                                <th>Leads</th>
+                                <th>New logos</th>
+                                <th>Ending MRR</th>
+                                <th>New MRR</th>
+                                <th>Expansion</th>
+                                <th>Churn + contraction</th>
+                                <th>S&amp;M</th>
+                                <th>Net burn</th>
+                                <th>Cash</th>
+                                <th>Quick</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+        </section>
+    </main>
+    </div>
+    </div>
+
+    <button type="button" id="helpButton" class="help-button" title="Help / Manual">?</button>
+
+    <div id="helpModal" class="modal" hidden>
+        <div class="modal-content" role="dialog" aria-labelledby="helpTitle">
+            <button type="button" class="close-help-button" title="Close">&times;</button>
+            <h2 id="helpTitle">How to Use This Calculator</h2>
+            <div id="helpMinimal">
             <p>This tool helps you estimate the effort needed to reach a financial goal based on your product price and conversion rates. Fill in the inputs on the left, and see the required path on the right.</p>
 
             <h3>Left Panel: Inputs</h3>
             <ul>
-                <li><strong>Target ($):</strong> Your main financial goal. 
+                <li><strong>Target ($):</strong> Your main financial goal.
                     <ul>
                         <li>Select 'Total Amount' if it's a one-time target (e.g., total revenue for a project).</li>
                         <li>Select 'MRR' if it's a Monthly Recurring Revenue target (e.g., for subscriptions).</li>
@@ -197,32 +546,69 @@
                 </li>
                 <li><strong>Item Price ($):</strong> The price of one unit of your product/service. For MRR/ARR, this is typically the monthly/recurring price per customer.</li>
                 <li><strong>Initial Interest Rate (%):</strong> Out of the people you 'Reach', what percentage show initial interest (e.g., click an ad, sign up for free, install an app)? Example: 20 clicks per 1000 views = 2%.</li>
-                <li><strong>Customer Conversion Rate (%):</strong> Out of the people who showed initial interest ('Free Users'), what percentage become paying customers? Example: 5 paid customers from 100 free signups = 5%.</li>
-                <li><strong>Calculate Monthly Churn?:</strong> (Toggle) Turn ON if you have a subscription/recurring model. This lets you enter the percentage of paying customers who leave each month. This makes MRR/ARR targets harder to hit, requiring more new customers.</li>
-                <li><strong>Calculate Expenses?:</strong> (Toggle) Turn ON to factor in costs. 
-                    <ul>
-                        <li>Add expense items (e.g., 'Marketing', 'Salaries') and their estimated monthly cost.</li>
-                        <li><strong>Adjust Plan for Expenses?:</strong> (Toggle within Expenses) If ON, the calculated 'Path' (Reach/Users/Customers needed) will increase to ensure your original Target is met *after* paying expenses. If OFF, the 'Path' shows what's needed for the Target, and the 'Net Result' shows what's left after expenses.</li>
-                    </ul>
-                </li>
-                 <li><strong>Show Advanced SaaS Metrics?:</strong> (Toggle) Turn ON for common subscription business metrics.
-                    <ul>
-                         <li><strong>Average Customer Acquisition Cost (CAC) ($):</strong> INPUT required. How much do you estimate it costs (marketing, sales etc.) to get one new paying customer?</li>
-                         <li><strong>Est. Customer LTV:</strong> CALCULATED. Lifetime Value - estimate of total revenue from one customer before they churn (Requires Churn to be ON).</li>
-                         <li><strong>LTV / CAC Ratio:</strong> CALCULATED. Compares LTV to CAC. A ratio over 3 is generally considered good.</li>
-                         <li><strong>CAC Payback Period:</strong> CALCULATED. How many months of revenue from a customer it takes to cover their acquisition cost.</li>
-                    </ul>
-                 </li>
+                <li><strong>Customer Conversion Rate (%):</strong> Out of the people who showed initial interest ('Free Users'), what percentage become paying customers?</li>
+                <li><strong>Calculate Monthly Churn?:</strong> Turn ON if you have a subscription/recurring model.</li>
+                <li><strong>Calculate Expenses?:</strong> Turn ON to factor in costs. <strong>Adjust Plan for Expenses?</strong> increases the path so the original target is met after expenses.</li>
+                <li><strong>Show Advanced SaaS Metrics?:</strong> LTV, LTV/CAC, and CAC payback (requires CAC and churn for LTV).</li>
             </ul>
 
             <h3>Right Panel: Results</h3>
             <ul>
-                <li><strong>Your Path (Calculations):</strong> Shows a 3-step summary of the goal, the required strategy (reach & free users needed per month/total), and the outcome (customers needed per month/total). It also shows Target/Equivalent MRR/ARR for context (these lines are hidden if 'Total Amount' target is selected).</li>
-                <li><strong>Your Path (Flow):</strong> A visual diagram showing the numbers needed at each stage (Reach -> Free Users -> Customers -> Target Met). If expenses are calculated, an extra 'Net Result' step appears showing the final amount after costs.</li>
+                <li><strong>Your Path (Calculations):</strong> Goal, strategy (reach &amp; free users), and outcome (customers needed).</li>
+                <li><strong>Your Path (Flow):</strong> Reach → Free Users → Customers → Target Met, plus Net Result when expenses are on.</li>
             </ul>
+            <p>Turn off <strong>Minimal mode</strong> in the header for the institutional capital-efficiency modeler.</p>
+            </div>
+
+            <div id="helpFull" hidden>
+            <p>This modeler replaces napkin funnel math with the same identities a Series A diligence associate will rebuild in a spreadsheet. All curves are computed client-side. Nothing leaves the browser.</p>
+
+            <h3>SaaS Magic Number</h3>
+            <p><code>Magic Number = Net New ARR<sub>Q</sub> / S&amp;M<sub>Q−1</sub> = 12 × (MRR<sub>t</sub> − MRR<sub>t−3</sub>) / Σ S&amp;M<sub>t−5…t−3</sub></code></p>
+            <p>Grades: &lt; 0.75 Poor · 0.75–1.0 Efficient · &gt; 1.0 High Growth. Headline figure uses the last complete quarter in the horizon.</p>
+
+            <h3>Burn Multiple</h3>
+            <p><code>Burn Multiple = Net Burn<sub>Q</sub> / Net New ARR<sub>Q</sub></code></p>
+            <p>Bessemer bands: &lt; 1.0 Amazing · 1.0–1.5 Great · 1.5–2.0 Good · &gt; 2.0 flagged.</p>
+
+            <h3>NRR and GRR</h3>
+            <p>Logo survival S(t) comes from Weibull or a two-mass log-normal mixture. Dollars then layer expansion e and contraction c:</p>
+            <p><code>GRR(t) = S(t) × (1 − c)<sup>t</sup></code><br>
+               <code>NRR(t) = S(t) × min(κ, (1 + e)<sup>t</sup>) × (1 − c)<sup>t</sup></code></p>
+            <p>Weibull: <code>S(t) = exp(−(t / λ)<sup>k</sup>)</code> with k &lt; 1 for decreasing hazard (steep months 1–3, then flattening).</p>
+            <p>Log-normal mix: <code>S(t) = w S<sub>fast</sub>(t) + (1 − w) S<sub>slow</sub>(t)</code>, <code>S<sub>i</sub> = 1 − Φ((ln t − μ<sub>i</sub>) / σ<sub>i</sub>)</code>.</p>
+
+            <h3>Quick Ratio</h3>
+            <p><code>(New MRR + Expansion MRR) / (Contraction MRR + Churned MRR)</code>. VC health threshold: &gt; 4.0.</p>
+
+            <h3>Dynamic CAC</h3>
+            <p>For each channel, excess demand <code>s = max(0, (L − L<sub>0</sub>) / L<sub>0</sub>)</code>:</p>
+            <p><code>CAC(L) = CAC<sub>0</sub> × e<sup>λs</sup></code> · <code>CR(L) = CR<sub>0</sub> × e<sup>−μs</sup></code></p>
+            <p>Leads above <code>L<sub>0</sub> × ceiling</code> are unfilled (market saturation). Inbound uses a low λ and a tight ceiling; paid uses a higher λ and a farther ceiling.</p>
+
+            <h3>LTV and payback</h3>
+            <p><code>LTV = Σ<sub>t</sub> ARPU × S(t) × min(κ, (1+e)<sup>t</sup>) × (1−c)<sup>t</sup> × GM</code> over 60 months. Expansion cap κ (default 2.5×) keeps LTV finite when NRR &gt; 100%. Discounted LTV uses WACC r as monthly <code>(1+r)<sup>1/12</sup> − 1</code>.</p>
+            <p>Payback is the first T where cumulative gross profit of the cohort covers blended CAC.</p>
+
+            <h3>Cash trough &amp; min raise</h3>
+            <p><code>Cash<sub>t</sub> = Cash<sub>t−1</sub> + GM × MRR<sub>t</sub> − (FixedOpEx + Other + S&amp;M<sub>t</sub>)</code></p>
+            <p>Trough = <code>min<sub>t</sub> Cash<sub>t</sub></code>. Minimum venture funding to avoid default = <code>max(0, −min Cash + 3 × peak monthly burn)</code>.</p>
+
+            <h3>Hard diligence gates</h3>
+            <ul>
+                <li>LTV : CAC &lt; 3.0x</li>
+                <li>CAC payback &gt; 12 months</li>
+                <li>Burn multiple &gt; 2.0x</li>
+                <li>Magic Number &lt; 0.75</li>
+            </ul>
+            </div>
         </div>
     </div>
 
+    <div id="toast" class="toast" hidden>Copied to clipboard</div>
+
+    <script src="engine.js"></script>
+    <script src="minimal.js"></script>
     <script src="script.js"></script>
 </body>
-</html> 
+</html>
